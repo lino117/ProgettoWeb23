@@ -11,24 +11,23 @@ const connect = require('../database/mongodb')
                         const db = await connect();
                         const collection = db.collection('users');
                         const result = await collection.find({username : requsername}).toArray();
-                        console.log(result)
                         return (result.length == 0 ? true : false)
                 }   catch (e) {
                         console.log(e)
                 }
         }
-
-         checkpsw = async (psw)=> {
-                 try {
-                         const db = await connect();
-                         const collection = db.collection('users');
-                         const result =  collection.findOne({password : psw});
-                         collection.close
-                         return (result.size != 0 ? result : undefined)
-                 }catch (err){
-                        console.log(err);
-                }
-        }
+        //
+        //  checkpsw = async (psw)=> {
+        //          try {
+        //                  const db = await connect();
+        //                  const collection = db.collection('users');
+        //                  const result =  collection.findOne({password : psw});
+        //                  collection.close
+        //                  return (result.size != 0 ? result : undefined)
+        //          }catch (err){
+        //                 console.log(err);
+        //         }
+        // }
 
 exports.regUser = async (req,res)=>{
         const userinfo = req.body
@@ -45,7 +44,6 @@ exports.regUser = async (req,res)=>{
                                 username: userinfo.username,
                                 password: userinfo.password,
                         })
-                        collection.close;
 
                 } catch (err) {
                         console.log(err)
@@ -87,7 +85,7 @@ exports.login = async (req,res)=>{
                        username:userinfo.username,
                        password:userinfo.password
                 }).toArray();
-                collection.find().close()
+
                 res.send((result.length == 0 ?  'Username o password errato, riprova oppure registra':result ))
 
         } catch (err) {
@@ -98,7 +96,7 @@ exports.login = async (req,res)=>{
 exports.resetpsw= async (req,res)=>{
         const userinfo = req.body
 
-        if (userinfo.userphase){
+        if (userinfo.userphase == 1){
                 const noUser = await checkUser(userinfo.username);
                res.send(noUser ? 'Username inesistente' : userinfo.username)
                 // ricorda di mettere con bottone flag !userphase
@@ -107,9 +105,10 @@ exports.resetpsw= async (req,res)=>{
                         const db = await connect();
                         const collection = db.collection('users');
                         // collection.findOneAndReplace({username:userinfo.username},{#})
-                        collection.findOneAndReplace({username:userinfo.username},{$set:{password:userinfo.newpsw}})
 
-                        collection.close
+                        await collection.updateOne({username:userinfo.username},{$set:{password:userinfo.newpsw}})
+                        const result = await collection.find({username:userinfo.username}).toArray()
+                        res.send(result)
 
                 }catch (err){
                         console.log(err)
