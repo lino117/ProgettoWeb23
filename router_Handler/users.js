@@ -1,4 +1,5 @@
 const connect = require('../database/mongodb')
+const {checkCollectionName} = require("mongodb/src/utils");
         //
         // linkdb = async ()=>{
         //         const db =connect();
@@ -43,6 +44,8 @@ exports.regUser = async (req,res)=>{
                         collection.insertOne({
                                 username: userinfo.username,
                                 password: userinfo.password,
+                                usertype: userinfo.usertype,
+                                maxchar : userinfo.maxchar
                         })
 
                 } catch (err) {
@@ -115,4 +118,21 @@ exports.resetpsw= async (req,res)=>{
                 }
         }
 
+}
+
+exports.squeal=async (req,res)=>{
+        const squealinfo = req.body
+        try {
+                const db = await connect();
+                const squealC = await db.collection('squeals');
+                const squeal = await squealC.insertOne({
+                        owner: squealinfo.username,
+                        text:  squealinfo.text
+                })
+                const users = await db.collection('users')
+                const remainderChar = await users.findOne({username: squealinfo.username},{maxchar:1})
+                await users.updateOne({username:squealinfo.username},{$set:{maxchar: (maxchar - squealinfo.text.length)}})
+        }catch (e) {
+                console.log(e)
+        }
 }
