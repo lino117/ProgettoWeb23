@@ -136,3 +136,6 @@ exports.squeal=async (req,res)=>{
                 console.log(e)
         }
 }
+exports.getUser=(req,res)=>{
+
+}
