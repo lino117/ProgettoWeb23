@@ -1,35 +1,16 @@
 const connect = require('../database/mongodb')
-const {checkCollectionName} = require("mongodb/src/utils");
-        //
-        // linkdb = async ()=>{
-        //         const db =connect();
-        //         const collection = db.collection('users')
-        //         return collection
-        // }
+
 
         checkUser = async (requsername)=>{
                 try {
                         const db = await connect();
                         const collection = db.collection('users');
                         const result = await collection.find({username : requsername}).toArray();
-                        return (result.length == 0 ? true : false)
+                        return (result.length === 0)
                 }   catch (e) {
                         console.log(e)
                 }
         }
-        //
-        //  checkpsw = async (psw)=> {
-        //          try {
-        //                  const db = await connect();
-        //                  const collection = db.collection('users');
-        //                  const result =  collection.findOne({password : psw});
-        //                  collection.close
-        //                  return (result.size != 0 ? result : undefined)
-        //          }catch (err){
-        //                 console.log(err);
-        //         }
-        // }
-
 exports.regUser = async (req,res)=>{
         const userinfo = req.body
         if(!userinfo.username || !userinfo.password){
@@ -37,7 +18,7 @@ exports.regUser = async (req,res)=>{
         }
         const noUser = await checkUser(userinfo.username)
 
-        if (noUser) {
+        // if (noUser) {
                 try {
                         const db = await connect();
                         const collection = db.collection('users');
@@ -45,40 +26,19 @@ exports.regUser = async (req,res)=>{
                                 username: userinfo.username,
                                 password: userinfo.password,
                                 usertype: userinfo.usertype,
-                                maxchar : userinfo.maxchar
+                                CharNum: userinfo.CharNum
                         })
 
                 } catch (err) {
                         console.log(err)
                 }
                 res.send('Registrato!')
-        }else {
-                res.send('Username già esistente')
-        }
+        // }else {
+        //         res.send('Username già esistente')
+        // }
 
 }
-// exports.search = async (req,res)=>{
-//         const userinfo = req.body
-//         try {
-//                 const db = await connect();
-//                 const collection = db.collection('users');
-//                 const result = await collection.find({
-//                          username:userinfo.username,
-//                          // password:userinfo.password
-//                 }).toArray();
-//                 const NoUser=
-//                 res.send(result != [] ? result : 'Username o password errato, riprova oppure registra' )
-//                 // collection.close
-//                 // console.log(result)
-//                 // res.json(result)
-//
-//         } catch (err) {
-//                 console.error(err)
-//         }
-//
-//
-// }
-
+//参数是 username password
 exports.login = async (req,res)=>{
         const userinfo = req.body
         try {
@@ -89,17 +49,18 @@ exports.login = async (req,res)=>{
                        password:userinfo.password
                 }).toArray();
 
-                res.send((result.length == 0 ?  'Username o password errato, riprova oppure registra':result ))
+                res.send((result.length === 0 ?  'Username o password errato, riprova oppure registra':result ))
 
         } catch (err) {
                 console.error(err)
         }
 
 }
+//参数是 username， newpsw
 exports.resetpsw= async (req,res)=>{
         const userinfo = req.body
 
-        if (userinfo.userphase == 1){
+        if (userinfo.userphase === 1){
                 const noUser = await checkUser(userinfo.username);
                res.send(noUser ? 'Username inesistente' : userinfo.username)
                 // ricorda di mettere con bottone flag !userphase
@@ -119,23 +80,37 @@ exports.resetpsw= async (req,res)=>{
         }
 
 }
-
+// 参数是 username, text, like
 exports.squeal=async (req,res)=>{
         const squealinfo = req.body
         try {
                 const db = await connect();
-                const squealC = await db.collection('squeals');
-                const squeal = await squealC.insertOne({
-                        owner: squealinfo.username,
-                        text:  squealinfo.text
+                const squeals = await db.collection('squeals');
+                const squeal = await squeals.insertOne({
+                        user: squealinfo.username,
+                        text:  squealinfo.text,
+                        like: squealinfo.like
                 })
                 const users = await db.collection('users')
-                const remainderChar = await users.findOne({username: squealinfo.username},{maxchar:1})
-                await users.updateOne({username:squealinfo.username},{$set:{maxchar: (maxchar - squealinfo.text.length)}})
+                const CharNum = await users.find( {username: squealinfo.username},({CharNum:1})).toArray()
+                var RemainderChar = CharNum[0].CharNum - squealinfo.text.length
+                await users.updateOne({username:squealinfo.username},{$set:{CharNum: RemainderChar}})
+                res.send('squealed!')
+                // res.redirect('/home')
         }catch (e) {
                 console.log(e)
         }
 }
-exports.getUser=(req,res)=>{
 
+exports.getUser=async (req,res)=>{
+        const userinfo = req.body
+        try{
+                const db = await connect()
+                const users = await db.collection('users')
+                const result = await users.find({})
+                res.send(result)
+
+        }catch (e) {
+                console.log(e)
+        }
 }
