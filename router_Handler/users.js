@@ -1,22 +1,27 @@
 const connect = require('../database/mongodb')
 
-
-        checkUser = async (requsername)=>{
+// true if noUser
+        noUser = async (username)=>{
                 try {
                         const db = await connect();
-                        const collection = db.collection('users');
-                        const result = await collection.find({username : requsername}).toArray();
+                        const collection = await db.collection('users');
+                        const result = await collection.find({username:username}).toArray();
                         return (result.length === 0)
                 }   catch (e) {
                         console.log(e)
                 }
         }
+
+
+
+
+// 参数是 username，password，usertype，Charnum
 exports.regUser = async (req,res)=>{
         const userinfo = req.body
         if(!userinfo.username || !userinfo.password){
                 return res.send( {status : 1, message:'Username o password non valido'} )
         }
-        const noUser = await checkUser(userinfo.username)
+        const noUser = await noUser(userinfo.username)
 
         // if (noUser) {
                 try {
@@ -61,7 +66,7 @@ exports.resetpsw= async (req,res)=>{
         const userinfo = req.body
 
         if (userinfo.userphase === 1){
-                const noUser = await checkUser(userinfo.username);
+                const noUser = await noUser(userinfo.username);
                res.send(noUser ? 'Username inesistente' : userinfo.username)
                 // ricorda di mettere con bottone flag !userphase
         }else{
@@ -81,27 +86,32 @@ exports.resetpsw= async (req,res)=>{
 
 }
 // 参数是 username, text, like
-exports.squeal=async (req,res)=>{
+exports.squeal=async (req,res)=> {
         const squealinfo = req.body
-        try {
-                const db = await connect();
-                const squeals = await db.collection('squeals');
-                const squeal = await squeals.insertOne({
-                        user: squealinfo.username,
-                        text:  squealinfo.text,
-                        like: squealinfo.like
-                })
-                const users = await db.collection('users')
-                const CharNum = await users.find( {username: squealinfo.username},({CharNum:1})).toArray()
-                var RemainderChar = CharNum[0].CharNum - squealinfo.text.length
-                await users.updateOne({username:squealinfo.username},{$set:{CharNum: RemainderChar}})
-                res.send('squealed!')
-                // res.redirect('/home')
-        }catch (e) {
-                console.log(e)
-        }
-}
 
+        if ( await noUser(squealinfo.username) === false ) {
+                try {
+                        const db = await connect();
+                        const squeals = await db.collection('squeals');
+                        const squeal = await squeals.insertOne({
+                                user: squealinfo.username,
+                                text: squealinfo.text,
+                                like: squealinfo.like
+                        })
+                        const users = await db.collection('users')
+                        const CharNum = await users.find({username: squealinfo.username}, ({CharNum: 1})).toArray()
+                        var RemainderChar = CharNum[0].CharNum - squealinfo.text.length
+                        await users.updateOne({username: squealinfo.username}, {$set: {CharNum: RemainderChar}})
+                        res.send('squealed!')
+                        // res.redirect('/home')
+                } catch (e) {
+                        console.log(e)
+                }
+        }else{
+                res.send('username inesistente')
+        }
+
+}
 exports.getUser=async (req,res)=>{
         const userinfo = req.body
         try{
