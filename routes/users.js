@@ -5,6 +5,8 @@ const router_handler = require('../router_Handler/users')
 /* GET users listing. */
 router.get('/getUser',router_handler.getUser)
 router.get('/home')
+router.get('/getSqueal',router_handler.getSqueal)
+// router.get('popularityCheck',router_handler.popularityCheck)
 
 // POST users listing
 router.post('/login',router_handler.login)
