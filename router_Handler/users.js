@@ -14,25 +14,62 @@ const connect = require('../database/mongodb')
 
         timeCounter =async ()=>{
                 const timeElapsed = Date.now();
-                const today = new Date(timeElapsed).toDateString();
-                return today
+                return new Date(timeElapsed).toDateString()
         }
 
-        popularityCheck = async (username)=>{
-        try {
-                var likeCont, dislikeCont;
-                const db = await connect();
-                const squeals = await db.collection('squeals')
-                const likes = await squeals.find({username:username,popularity :{$in :['popolare','impopolare']}},{})
+        popularityCounter = async (username)=> {
+                const today = timeCounter()
+                try {
+                        var likeCont, dislikeCont;
+                        const db = await connect();
+                        const squeals = await db.collection('squeals')
+                        // parte che distingue popolarita del messaggio
+                        const messages = await squeals.find({usename: username})
+                         // await messages.each()
+                         //  // await squeals.find({usename: username}).each(async (err, doc)=>{
+                         //          // if(messages.like > CM && squealinfo.dislike > CM) {
+                         //          //         popularity = 'controverso'
+                         //          // }else if (squealinfo.like > CM){
+                         //          //         popularity = 'popolare'
+                         //          // }else if (squealinfo.dislike > CM){
+                         //          //         popularity = 'impopolare'
+                         //          // }
+                         //          if (doc){
+                         //                  console.log(doc)
+                         //          }else{
+                         //                  return false
+                         //          }
 
-        }catch (e) {
-                console.log(e)
+
+
+
+
+                          // return await squeals.aggregate([
+                          //         {
+                          //                 $match:
+                          //                     { username: username,time:{$gt:today} }
+                          //         },
+                          //         {
+                          //                 $group: {_id: '$popularity', 'statusPopularity': {$count: {}}}
+                          //         },
+                          //         {
+                          //                 $sort: {_id: 1}
+                          //         }
+                          // ]).toArray()
+                          //  array sorted: contro, impop, pop, undefined
+
+                  }catch (e) {
+                          console.log(e)
+                  }
+
         }
-        }
+exports.test=async (req,res)=>{
+        const userinfo = req.body
+        res.send(popularityCounter(req.username))
 
+}
 
-
-// 参数是 username，password，usertype，Charnum,if usertype= professional
+// 参数是 username，password，usertype，Charnum,quote,if usertype= professional then smm else null,
 exports.regUser = async (req,res)=>{
         const userinfo = req.body
 
@@ -49,6 +86,7 @@ exports.regUser = async (req,res)=>{
                                 username: userinfo.username,
                                 password: userinfo.password,
                                 usertype: userinfo.usertype,
+                                quote   : userinfo.quote,
                                 CharNum : userinfo.CharNum,
                                 SMM     : userinfo.smm,
                                 popSqueals: 0,
@@ -114,14 +152,7 @@ exports.squeal=async (req,res)=> {
 
         const CM = squealinfo.visitors * 0.25
         let popularity = undefined
-        // parte che distingue popolarita del messaggio
-        if(squealinfo.like > CM && squealinfo.dislike > CM) {
-                popularity = 'controverso'
-        }else if (squealinfo.like > CM){
-                popularity = 'popolare'
-        }else if (squealinfo.dislike > CM){
-                popularity = 'impopolare'
-        }
+
 
 
         if ( await noUser(squealinfo.username) === false ) {
@@ -138,11 +169,18 @@ exports.squeal=async (req,res)=> {
                                 popularity : popularity,
                                 CM : CM
                         })
+
+
                         // parte che modifica quota caratteri dopo squeal
                         const users = await db.collection('users')
-                        const CharNum = await users.find({username: squealinfo.username}, ({CharNum: 1})).toArray()
-                        var RemainderChar = CharNum[0].CharNum - squealinfo.text.length
+                        const User = await users.find({username: squealinfo.username}).toArray()
+                        var RemainderChar = User[0].CharNum - squealinfo.text.length
                         await users.updateOne({username: squealinfo.username}, {$set: {CharNum: RemainderChar}})
+                        // aggiorna situazione popolarita
+                        const situationPop = popularityCounter(squealinfo.username)
+                        // if (User[0].popSqueals != situationPop[])
+
+
 
                         res.send('squealed!')
 
