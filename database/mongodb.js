@@ -13,8 +13,7 @@ const client = new MongoClient(uri, {
 
 async function connect() {
     const client = await MongoClient.connect(uri, { useUnifiedTopology: true });
-    const db = client.db('ProgettoTW');
-    return db;
+    return client.db('ProgettoTW');
 }
 
 module.exports = connect;
