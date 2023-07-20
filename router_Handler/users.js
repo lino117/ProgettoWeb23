@@ -130,7 +130,7 @@ exports.squeal=async (req,res)=> {
                         const squeals = await db.collection('squeals');
                         const squeal = await squeals.insertOne({
                                 user    : squealinfo.username,
-                                text    : squealinfo.text.toString(),
+                                text    : squealinfo.text,
                                 like    : squealinfo.like,
                                 dislike : squealinfo.dislike,
                                 category: squealinfo.category,
@@ -138,7 +138,6 @@ exports.squeal=async (req,res)=> {
                                 popularity : popularity,
                                 CM : CM
                         })
-                        console.log(typeof squeal.text);
                         // parte che modifica quota caratteri dopo squeal
                         const users = await db.collection('users')
                         const CharNum = await users.find({username: squealinfo.username}, ({CharNum: 1})).toArray()
@@ -146,7 +145,6 @@ exports.squeal=async (req,res)=> {
                         await users.updateOne({username: squealinfo.username}, {$set: {CharNum: RemainderChar}})
 
                         res.send('squealed!')
-
 
                 } catch (e) {
                         console.log(e)

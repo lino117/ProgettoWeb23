@@ -4,7 +4,7 @@ const router_handler = require('../router_Handler/users')
 
 /* GET users listing. */
 router.get('/getUser',router_handler.getUser)
-router.get('/home')
+router.get('/test',router_handler.test)
 router.get('/getSqueal',router_handler.getSqueal)
 // router.get('popularityCheck',router_handler.popularityCheck)
 
