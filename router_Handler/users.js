@@ -76,7 +76,7 @@ exports.regUser = async (req,res)=>{
         if(!userinfo.username || !userinfo.password){
                 return res.send( {status : 1, message:'Username o password non valido'} )
         }
-        const noUser = await noUser(userinfo.username)
+        // const noUser = await noUser(userinfo.username)
 
         // if (noUser) {
                 try {
@@ -171,6 +171,7 @@ exports.squeal=async (req,res)=> {
                         })
 
 
+
                         // parte che modifica quota caratteri dopo squeal
                         const users = await db.collection('users')
                         const User = await users.find({username: squealinfo.username}).toArray()
@@ -193,11 +194,12 @@ exports.squeal=async (req,res)=> {
 
 }
 exports.getUser=async (req,res)=>{
-        const userinfo = req.body
+        const userinfo = req.query
+
         try{
                 const db = await connect()
                 const users = await db.collection('users')
-                const result = await users.find({})
+                const result = await users.find({username:userinfo.username}).toArray()
                 res.send(result)
 
         }catch (e) {
