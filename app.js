@@ -1,6 +1,7 @@
 var createError = require('http-errors');
 var express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 
 var path = require('path');
 var cookieParser = require('cookie-parser');

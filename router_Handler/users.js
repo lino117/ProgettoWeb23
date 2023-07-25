@@ -1,4 +1,5 @@
 const connect = require('../database/mongodb')
+const jwt = require('jsonwebtoken');
 
 // true if noUser
         noUser = async (username)=>{
@@ -112,14 +113,23 @@ exports.login = async (req,res)=>{
                        username:userinfo.username,
                        password:userinfo.password
                 }).toArray();
-
-                res.send((result.length === 0 ?  'Username o password errato, riprova oppure registra':result ))
+                if (!result){
+                        return res.status(401).json({ error: "Utente non esiste o password sbagliata"})
+                }
+                const token = jwt.sign({ id: result._id, username: result.username }, 'tecweb2223', {
+                        expiresIn: '1h',
+                });
+                res.json({token})
+                // res.send((result.length === 0 ?  'Username o password errato, riprova oppure registra':result ))
 
         } catch (err) {
-                console.error(err)
+                console.error(err);
+                res.status(500).json({error: "Errore interno server"})
         }
 
 }
+
+
 //参数是 username， newpsw
 exports.resetpsw= async (req,res)=>{
         const userinfo = req.body

@@ -1,9 +1,10 @@
 var express = require('express');
 var router = express.Router();
 const router_handler = require('../router_Handler/users')
+const {authenticateToken} = require("../router_Handler/authenticateToken");
 
 /* GET users listing. */
-router.get('/getUser',router_handler.getUser)
+router.get('/getUser', authenticateToken, router_handler.getUser)
 router.get('/test',router_handler.test)
 router.get('/getSqueal',router_handler.getSqueal)
 // router.get('popularityCheck',router_handler.popularityCheck)
@@ -11,8 +12,8 @@ router.get('/getSqueal',router_handler.getSqueal)
 // POST users listing
 router.post('/login',router_handler.login)
 router.post('/regUser',router_handler.regUser)
-router.post('/resetpsw',router_handler.resetpsw)
-router.post('/squeal',router_handler.squeal)
+router.post('/resetpsw',authenticateToken,router_handler.resetpsw)
+router.post('/squeal',authenticateToken, router_handler.squeal)
 
 // PUT users listing
 
