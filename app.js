@@ -2,11 +2,13 @@ var createError = require('http-errors');
 var express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-
+const { expressjwt } = require('express-jwt');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const bodyParser = require("body-parser");
 
+const secretKey = "Tecweb2023";
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -15,7 +17,7 @@ var socialRouter = require('./routes/social');
 var app = express();
 
 const mongoose =require( "mongoose");
-mongoose.connect("mongodb+srv://jinclaudio:Keqingyyds123.@claudiomongo.3ulb5gw.mongodb.net/?retryWrites=true&w=majority");
+mongoose.connect("mongodb+srv://jinclaudio:Keqingyyds123.@claudiomongo.3ulb5gw.mongodb.net/ProgettoTecweb?retryWrites=true&w=majority");
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "MongoDB 连接错误："));
@@ -31,6 +33,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(
+    expressjwt({ secret: secretKey, algorithms: ["HS256"] }).unless({
+      path: [/^\/social/]    })
+);
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);

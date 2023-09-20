@@ -2,6 +2,8 @@ const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
 const asyncHandler = require("express-async-handler");
 const {  validationResult } = require("express-validator");
+const jwt = require('jsonwebtoken');
+const { secretToken } = require("../router_Handler/authenticateToken");
 
 //get the list of all users
 exports.user_list = asyncHandler(async (req, res, next) => {
@@ -9,11 +11,22 @@ exports.user_list = asyncHandler(async (req, res, next) => {
     res.send(allUsers);
 })
 
+//non è necessario alcun param, se l'utente è loggato, ritorna tutti i campi
+//includere jwt nell'header Authorization
 exports.user_detail = asyncHandler(async (req, res, next) => {
+    const token = req.headers.authorization;
+    const decoded = jwt.verify(token.replace('Bearer ', ''), secretToken);
+
+    const currentUser = decoded.username;
+    console.log('Current user:', currentUser);
+
+
+    // console.log(userId);
     const [user, allSquealByUser] = await Promise.all([
-        User.findById(req.params.username).exec(),
-        Squeal.find({user: req.params.username}, "summary").exec(),
+        User.findOne({username: currentUser}).exec(),
+        Squeal.find({username: currentUser}, "summary").exec(),
     ]);
+    console.log(user)
     if ( user === null){
         const error = new Error("User not found");
         error.status = 404;
@@ -28,8 +41,10 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
 
 exports.user_create_post = asyncHandler(async (req, res, next) =>{
     const userInfo = req.body;
-    const existingUser = await User.findOne(userInfo.username);
+    console.log(userInfo);
+    const existingUser = await User.findOne({ username: userInfo.username});
     if (existingUser){
+        console.log("utente esistente")
         return res.status(400).json({ error: "user already exists"});
 
     }
@@ -55,16 +70,15 @@ exports.user_create_post = asyncHandler(async (req, res, next) =>{
 
 exports.dbtest = asyncHandler(async (req, res, next) => {
     const userInfo = req.body;
-
+    console.log(userInfo);
+    console.log(userInfo.username);
     const user = new User({
-        firstName: "wow",
-        familyName: "wow",
-        username: "wow",
-        password: "wow",
-        userType: "VIP",
-        creditTot: 10,
-        creditAvailable: 10
+        username: userInfo.username,
+        password: userInfo.password,
+        creditTot: userInfo.creditTot,
+        creditAvailable: userInfo.creditAvailable
     });
+    console.log(user.username)
     try {
         await user.save();
         res.status(200).json({ message: "user created successfully", user });
@@ -76,3 +90,27 @@ exports.dbtest = asyncHandler(async (req, res, next) => {
 
 
 })
+
+exports.user_login_post = asyncHandler(async (req, res, next) =>{
+    const userInfo = req.body;
+    const loguser = await User.findOne({ username: userInfo.username});
+    if (   userInfo.username !== loguser.username ||
+           userInfo.password !== loguser.password ){
+        res.send({
+            status: 400,
+            message: "Nome utente o password errato",
+        });
+    }
+
+    const token = jwt.sign({ username: userInfo.username}, "tecweb2223",{
+        expiresIn: "1h",
+    });
+    res.send({
+        status: 200,
+        message: "Logged successfully",
+        token: token,
+    })
+
+})
+
+exports.user_detail

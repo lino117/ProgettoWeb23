@@ -9,7 +9,7 @@ const userSchema = new Schema({
     //da completare
     userType: { type: String, enum: ["Normale", "VIP"]},
     creditTot: { type: Number, min: 0},
-    creditAvailable: { type: Number, required: true},
+    creditAvailable: { type: Number, required: true, default: 0},
 
 });
 

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-
+const secretToken = "tecweb2223";
 function authenticateToken(req, res, next) {
     const token = req.header('Authorization');
 
@@ -7,7 +7,7 @@ function authenticateToken(req, res, next) {
         return res.status(401).json({ error: 'No token provided' });
     }
 
-    jwt.verify(token.replace('Bearer ', ''), 'tecweb2223', (err, user) => {
+    jwt.verify(token.replace('Bearer ', ''), secretToken, (err, user) => {
         if (err) {
             return res.status(403).json({ error: 'Invalid token' });
         }
@@ -17,4 +17,5 @@ function authenticateToken(req, res, next) {
     });
 }
 
-module.exports = { authenticateToken };
+module.exports = { authenticateToken, secretToken };
+// module.exports = secretToken;
