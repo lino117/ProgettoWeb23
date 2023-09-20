@@ -1,9 +1,9 @@
 const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
 const asyncHandler = require("express-async-handler");
-const {  validationResult } = require("express-validator");
 const jwt = require('jsonwebtoken');
-const { secretToken } = require("../router_Handler/authenticateToken");
+const { secretToken, getCurrentUserFromToken } = require("../router_Handler/authenticateToken");
+
 
 //get the list of all users
 exports.user_list = asyncHandler(async (req, res, next) => {
@@ -15,9 +15,10 @@ exports.user_list = asyncHandler(async (req, res, next) => {
 //includere jwt nell'header Authorization
 exports.user_detail = asyncHandler(async (req, res, next) => {
     const token = req.headers.authorization;
-    const decoded = jwt.verify(token.replace('Bearer ', ''), secretToken);
+    // const decoded = jwt.verify(token.replace('Bearer ', ''), secretToken);
 
-    const currentUser = decoded.username;
+    const currentUser = getCurrentUserFromToken(token);
+
     console.log('Current user:', currentUser);
 
 

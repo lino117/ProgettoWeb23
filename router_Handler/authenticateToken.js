@@ -17,5 +17,10 @@ function authenticateToken(req, res, next) {
     });
 }
 
-module.exports = { authenticateToken, secretToken };
+function getCurrentUserFromToken(token) {
+    const decoded = jwt.verify(token.replace('Bearer ', ''), secretToken);
+    // const currentUser = decoded.usernsame;
+    return decoded.username;
+}
+module.exports = { authenticateToken, secretToken, getCurrentUserFromToken };
 // module.exports = secretToken;
