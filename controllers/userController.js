@@ -63,7 +63,7 @@ exports.user_create_post = asyncHandler(async (req, res, next) =>{
         res.status(200).json({ message: "user created successfully" });
 
     } catch (error){
-        res.status(500).json({ error: "An error occurred while creating the " });
+        res.status(500).json({ error: "An error occurred while creating the user" });
 
     }
 
@@ -114,4 +114,4 @@ exports.user_login_post = asyncHandler(async (req, res, next) =>{
 
 })
 
-exports.user_detail
+//
