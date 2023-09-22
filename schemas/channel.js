@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
 const { Schema, model } = mongoose;
-
+const User = require("../schemas/users");
 
 const channelSchema = new Schema({
     name: String,
+    owner: [{ type: Schema.Types.ObjectId, ref: "User"}],
     receiverOfChannel: {
         type: String,
-        enum: [ "private", "reserved"],
+        enum: [ "official", "reserved"],
         required: true
     },
     typeOfChannel: {
