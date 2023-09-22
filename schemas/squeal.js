@@ -14,7 +14,7 @@ const squealSchema = new Schema({
         default: Date.now, // Data ed ora del messaggio non modificabili
     },
     isPrivate: { type: Boolean, default: false},
-    category: {
+    popularity: {
         type: String,
         enum: ['popolare', 'impopolare', 'controverso'], // Categoria del messaggi
     },
@@ -23,7 +23,15 @@ const squealSchema = new Schema({
             type:Schema.Types.ObjectId, ref: "Channel"}], // Canali Squealer a cui è stato aggiunto dalla redazione
     },
     automaticMessage: { type: Boolean,  default: false},
-    geo: { type: String }
+    geo: { type: String },
+    reaction: {
+        type: Number,
+        like: { type: Number },
+        dislike: { type: Number},
+        impression: { type: Number },
+        CM: { type: Number}
+    },
+
 });
 
 

@@ -7,8 +7,9 @@ const userSchema = new Schema({
     username: { type: String, required: true},
     password: { type: String, required: true},
     //da completare
-    isPro: { type: Boolean, default: false},
-    proType: { type: String, enum: ["VIP", "SMM", "ADMIN"]},
+    isPro: { type: Boolean },
+    proType: { type: String, enum: ["VIP", "SMM"]},
+    isAdmin: { type: Boolean },
     creditTot: { type: Number, min: 0},
     creditAvailable: { type: Number, required: true, default: 0},
 

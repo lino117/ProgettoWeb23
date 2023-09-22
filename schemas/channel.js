@@ -4,20 +4,18 @@ const User = require("../schemas/users");
 
 const channelSchema = new Schema({
     name: String,
-    owner: [{ type: Schema.Types.ObjectId, ref: "User"}],
+    admin: [{ type: Schema.Types.ObjectId, ref: "User"}],
     receiverOfChannel: {
         type: String,
         enum: [ "official", "reserved"],
         required: true
     },
-    typeOfChannel: {
+    labelOfChannel: {
         type: String,
-        enum: [ "trending", "random", "important", "controversial"]
-
     },
     followers: { type: Number, min: 0},
     isUnmuteable: Boolean,
-
+    members: [{ type: Schema.Types.ObjectId, ref: "User"}]
 });
 
 

@@ -14,12 +14,12 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
     const destinatari = req.body.destinatari;
     const token =  req.headers.authorization;
     let keywords = destinatari.match(keyword);
-    let channel = destinatari.match(channel_normal) || destinatari.match(channel_reserved) ;
+    let channel = destinatari.match(channel_normal);
     let singleUser = (destinatari.match(mention))?destinatari.match(mention)[0] : null;
     let recipients = keywords.concat(channel);
     const [sender,channelInDB] = await Promise.all([
         User.findOne({username: getCurrentUserFromToken(token)}).exec(),
-        Channel.findOne({ name: channel })
+        channelInDB.findOne({ name: channel })
     ]);//
     const squeal = new Squeal({
         sender: sender._id,
@@ -36,4 +36,3 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
         res.status(500).json({ error: "An error occurred while posting the squeal" });
     }
 })
-//
