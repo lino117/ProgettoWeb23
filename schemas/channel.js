@@ -15,6 +15,7 @@ const channelSchema = new Schema({
         enum: [ "trending", "random", "important", "controversial"]
 
     },
+    followers: { type: Number, min: 0},
     isUnmuteable: Boolean,
 
 });
