@@ -2,7 +2,7 @@ const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
 const asyncHandler = require("express-async-handler");
 const jwt = require('jsonwebtoken');
-const {  getCurrentUserFromToken } = require("../router_Handler/authenticateToken");
+const {  getCurrentUserFromToken } = require("../middleware/authenticateToken");
 
 
 

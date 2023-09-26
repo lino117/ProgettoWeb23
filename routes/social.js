@@ -1,13 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const {authenticateToken} = require("../router_Handler/authenticateToken");
-
+const {authenticateToken} = require("../middleware/authenticateToken");
+const upload = require("../middleware/fileHandler");
 const user_controller = require("../controllers/userController");
 const squeal_controller = require("../controllers/squealController");
 const mod_controller = require('../controllers/ModController')
 
 
-
+router.post('/upload', upload.single('image'), (req, res) => {
+    // 文件上传成功后的处理逻辑
+    res.send('文件上传成功');
+});
 
 router.post("/register", user_controller.user_regist_post);
 router.post("/dbtest", user_controller.dbtest);
