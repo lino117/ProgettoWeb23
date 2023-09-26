@@ -68,14 +68,25 @@ exports.squeal_update_put = asyncHandler( async (req,res)=>{
         for (const addRecipient of newDate.addedRecipient) {
             const channel = await Channel.findOne({name:addRecipient}).exec()
             if (channel) {
-                newRecipient.push(channel.name)
+                if (newRecipient.indexOf(channel.name) === -1) {
+                    newRecipient.push(channel.name)
+                }
+                // } else {
+                //     res.status(400).json('channel gia presente nei destinatari')}
             }
+            // } else {
+            //     res.status(401).json('channel inesistente')
+            // }
         }
 
     }
 
     const updatedSqueal = await Squeal.findByIdAndUpdate( newDate.id, {
-            recipients : newRecipient
+            recipients : newRecipient,
+            reaction: {
+                like : parseInt(newDate.like),
+                dislike : parseInt(newDate.dislike)
+            }
         },
         {
             returnDocument : 'after',
