@@ -5,12 +5,13 @@ const upload = require("../middleware/fileHandler");
 const user_controller = require("../controllers/userController");
 const squeal_controller = require("../controllers/squealController");
 const mod_controller = require('../controllers/ModController')
-
+const channel_controller = require("../controllers/channelController");
 router.post('/upload', upload.single('image'), (req, res) => {
     // 文件上传成功后的处理逻辑
     res.send('文件上传成功');
 });
 
+router.post("/create_channel", channel_controller.channel_create_post);
 router.post("/register", user_controller.user_regist_post);
 router.post("/dbtest", user_controller.dbtest);
 router.post("/login", user_controller.user_login_post);

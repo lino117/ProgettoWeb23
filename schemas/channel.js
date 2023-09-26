@@ -13,7 +13,7 @@ const channelSchema = new Schema({
     labelOfChannel: {
         type: String,
     },
-    followers: { type: Number, min: 0},
+    followers: { type: Number, min: 0, default: 0},
     isUnmuteable: Boolean,
     members: [{ type: Schema.Types.ObjectId, ref: "User"}]
 });

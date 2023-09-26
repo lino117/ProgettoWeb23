@@ -33,7 +33,7 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
         body: squealData,
         recipients: (singleUser) ? singleUser : recipients,
         isPrivate: (squealData.match(mention) !== null || true),
-        squealerChannels: channel,
+        squealerChannels: channelInDB,
         image: file.path
     })
     try {
