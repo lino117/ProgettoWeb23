@@ -44,3 +44,17 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
         res.status(500).json({ error: "An error occurred while posting the squeal" });
     }
 })
+
+exports.get_squeals = asyncHandler( async (req, res, next) =>{
+    const token = req.headers.authorization;
+    let squealsToShow;
+    const channels = await Channel.find({ receiverOfChannel: "official"}).select("name");
+    if (token){
+        squealsToShow = await Squeal.find().sort({dateTime: -1}).exec();
+    } else {
+        squealsToShow = await Squeal.find({
+            squealerChannels: { $in: channels }
+        });
+    }
+    res.send(squealsToShow);
+})

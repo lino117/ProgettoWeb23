@@ -24,4 +24,5 @@ exports.channel_create_post = asyncHandler( async (req, res, next) => {
         console.log(error);
         res.status(500).json({ error: "An error occurred while creating the channel" });
     }
-})
+});
+

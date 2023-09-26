@@ -21,6 +21,7 @@ router.post("/squeal_post", authenticateToken, upload.single('image'), squeal_co
 
 router.get('/allSqueals',mod_controller.squeal_all_get)
 router.get('/allChannel',mod_controller.channel_all_get)
+router.get('/squeal_get',squeal_controller.get_squeals);
 
 router.put('/updateUser',mod_controller.user_update_put)
 router.put('/updateSqueal',mod_controller.squeal_update_put)
