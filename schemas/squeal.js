@@ -31,6 +31,7 @@ const squealSchema = new Schema({
         impression: { type: Number },
         CM: { type: Number}
     },
+    image: {type: String}
 
 });
 

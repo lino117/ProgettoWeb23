@@ -4,13 +4,20 @@ const User = require("../schemas/users");
 const jwt = require('jsonwebtoken');
 const { secretToken, getCurrentUserFromToken} = require("../middleware/authenticateToken");
 const asyncHandler = require("express-async-handler");
+
+const { upload } = require('../middleware/fileHandler');
+
 const mention = /@\w+/;
 const keyword = /#\w+/g;
 const channel_reserved = /§[A-Z]+/g;
 const channel_normal = /§[a-z]+/g;
 //create a new squeal
 exports.new_squeal = asyncHandler( async (req, res, next) =>{
+
+    const file = req.file;
+    console.log(file);
     const squealData = req.body.body;
+    console.log(squealData)
     const destinatari = req.body.destinatari;
     const token =  req.headers.authorization;
     let keywords = destinatari.match(keyword);
@@ -19,14 +26,15 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
     let recipients = keywords.concat(channel);
     const [sender,channelInDB] = await Promise.all([
         User.findOne({username: getCurrentUserFromToken(token)}).exec(),
-        channelInDB.findOne({ name: channel })
+        Channel.findOne({ name: channel })
     ]);//
     const squeal = new Squeal({
         sender: sender._id,
         body: squealData,
         recipients: (singleUser) ? singleUser : recipients,
-        isPrivate: (squealData.match(mention) !== null || ''),
+        isPrivate: (squealData.match(mention) !== null || true),
         squealerChannels: channel,
+        image: file.path
     })
     try {
         await squeal.save();
