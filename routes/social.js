@@ -17,6 +17,8 @@ router.get("/get_all_users", mod_controller.user_list);
 router.post("/squeal_post", authenticateToken, squeal_controller.new_squeal);
 
 router.get('/allSqueals',mod_controller.squeal_all_get)
+router.get('/allChannel',mod_controller.channel_all_get)
+
 router.put('/updateUser',mod_controller.user_update_put)
 router.put('/updateSqueal',mod_controller.squeal_update_put)
 module.exports = router;
