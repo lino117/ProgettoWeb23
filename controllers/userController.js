@@ -5,11 +5,7 @@ const jwt = require('jsonwebtoken');
 const {  getCurrentUserFromToken } = require("../router_Handler/authenticateToken");
 
 
-//get the list of all users
-exports.user_list = asyncHandler(async (req, res, next) => {
-    const allUsers = await User.find().sort({username: 1}).exec();
-    res.send(allUsers);
-})
+
 
 //non è necessario alcun param, se l'utente è loggato, ritorna tutti i campi
 //includere jwt nell'header Authorization
@@ -40,8 +36,13 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
     res.send(userData);
 })
 
-exports.user_create_post = asyncHandler(async (req, res, next) =>{
+exports.user_regist_post = asyncHandler(async (req, res, next) =>{
     const userInfo = req.body;
+    const userCredit = {
+        daily : userInfo.creditInit,
+        weekly:userInfo.creditInit * 7,
+        monthly: userInfo.creditInit *30
+    }
     console.log(userInfo);
     const existingUser = await User.findOne({ username: userInfo.username});
     if (existingUser){
@@ -50,13 +51,13 @@ exports.user_create_post = asyncHandler(async (req, res, next) =>{
 
     }
     const user = new User({
-        firstName: userInfo.firstName,
-        familyName: userInfo.familyName,
+        surname: userInfo.surname,
+        name: userInfo.name,
         username: userInfo.username,
         password: userInfo.password,
         userType: userInfo.userType,
-        creditTot: userInfo.creditTot,
-        creditAvailable: userInfo.creditAvailable
+        creditInit: userInfo.creditInit,
+        creditAvailable: userCredit
     });
     try {
         await user.save();
@@ -113,5 +114,19 @@ exports.user_login_post = asyncHandler(async (req, res, next) =>{
     })
 
 })
+
+exports.chooseSMM = asyncHandler(async (req,res)=>{
+
+})
+exports.changeSMM = asyncHandler(async (req,res)=>{
+
+})
+exports.chooseVIP = asyncHandler(async (req,res)=>{
+
+})
+exports.changeVIP = asyncHandler(async (req,res)=>{
+
+})
+
 
 //
