@@ -38,11 +38,7 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
 
 exports.user_regist_post = asyncHandler(async (req, res, next) =>{
     const userInfo = req.body;
-    const userCredit = {
-        daily : userInfo.creditInit,
-        weekly:userInfo.creditInit * 7,
-        monthly: userInfo.creditInit *30
-    }
+
     console.log(userInfo);
     const existingUser = await User.findOne({ username: userInfo.username});
     if (existingUser){
@@ -51,13 +47,16 @@ exports.user_regist_post = asyncHandler(async (req, res, next) =>{
 
     }
     const user = new User({
-        surname: userInfo.surname,
-        name: userInfo.name,
+        nickname:userInfo.username,
         username: userInfo.username,
         password: userInfo.password,
         userType: userInfo.userType,
         creditInit: userInfo.creditInit,
-        creditAvailable: userCredit
+        creditAvailable: {
+            daily : userInfo.creditInit,
+            weekly : userInfo.creditInit *7,
+            monthly: userInfo.creditInit *30
+        }
     });
     try {
         await user.save();
@@ -95,7 +94,8 @@ exports.dbtest = asyncHandler(async (req, res, next) => {
 
 exports.user_login_post = asyncHandler(async (req, res, next) =>{
     const userInfo = req.body;
-    const loguser = await User.findOne({ username: userInfo.username});
+    const loguser = await User.findOne({ username: userInfo.username}).exec();
+
     if (   userInfo.username !== loguser.username ||
            userInfo.password !== loguser.password ){
         res.send({
@@ -105,7 +105,7 @@ exports.user_login_post = asyncHandler(async (req, res, next) =>{
     }
 
     const token = jwt.sign({ username: userInfo.username}, "tecweb2223",{
-        expiresIn: "1h",
+        // expiresIn: "1h",
     });
     res.send({
         status: 200,

@@ -24,8 +24,8 @@ const squealSchema = new Schema({
     },
     automaticMessage: { type: Boolean,  default: false},
     geo: { type: String },
+
     reaction: {
-        type: Number,
         like: { type: Number },
         dislike: { type: Number},
         impression: { type: Number },
