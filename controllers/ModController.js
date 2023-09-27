@@ -23,19 +23,18 @@ exports.user_list = asyncHandler(async (req, res, next) => {
     res.send(allUsers);
 })
 
-exports.user_update_put = asyncHandler(async (req, res)=>{
+exports.user_update_patch = asyncHandler(async (req, res)=>{
     const newDate = req.body;
-    const newCreditAvailable = {
-        daily: newDate.daily,
-        weekly:newDate.weekly ,
-        monthly: newDate.monthly
-    }
 
     const updatedUser = await User.findOneAndUpdate( {username:newDate.username}, {
 
         accountType: newDate.type,
         creditInit: newDate.creditInit,
-        creditAvailable:newCreditAvailable
+        creditAvailable:{
+            daily: newDate.daily,
+            weekly:newDate.weekly ,
+            monthly: newDate.monthly
+        }
     },
     {
        returnDocument : 'after',
@@ -48,7 +47,7 @@ exports.squeal_all_get = asyncHandler(async (req, res, next) => {
     const allSqueals = await Squeal.find().sort({dateTime:1}).exec();
     res.send(allSqueals);
 })
-exports.squeal_update_put = asyncHandler( async (req,res)=>{
+exports.squeal_update_patch = asyncHandler( async (req, res)=>{
     const newDate = req.body;
 
     // controlla prima se ci sono delle modifiche altrimenti non fa nulla
@@ -96,14 +95,17 @@ exports.squeal_update_put = asyncHandler( async (req,res)=>{
     // }
     //
     // res.send('nulla succeed')
-
-
-
 })
 
-exports.channel_all_get = asyncHandler(async (req, res, next) => {
-    const allChannel = await Channel.find().sort({name:1}).exec();
-    res.send(allChannel);
+exports.channelOffi_all_get = asyncHandler(async (req, res, next) => {
+    const allOffChannel = await Channel.find({typeOf:'official'}).sort({name:1}).exec();
+    res.send(allOffChannel);
 })
+exports.channelPriv_all_get = asyncHandler(async (req, res, next) => {
+    const allPrivChannel = await Channel.find({typeOf:'private'}).sort({name:1}).exec();
+    res.send(allPrivChannel);
+})
+
+
 
 
