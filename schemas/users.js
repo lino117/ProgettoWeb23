@@ -13,9 +13,9 @@ const userSchema = new Schema({
     },
     creditInit: { type: Number, min: 0},
     creditAvailable: {
-        daily: {type: Number},
-        weekly:{type: Number},
-        monthly:{type: Number},
+        daily: {type: Number, default: 0},
+        weekly:{type: Number, default: 0},
+        monthly:{type: Number, default: 0},
     },
 
 });

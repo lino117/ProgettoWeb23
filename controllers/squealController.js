@@ -39,6 +39,7 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
     try {
         await squeal.save();
         res.status(200).json({ message: "squeal posted successfully"});
+        // console.log(res)
     } catch (error){
         console.log(error);
         res.status(500).json({ error: "An error occurred while posting the squeal" });

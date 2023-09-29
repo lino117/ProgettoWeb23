@@ -6,6 +6,7 @@ const user_controller = require("../controllers/userController");
 const squeal_controller = require("../controllers/squealController");
 const mod_controller = require('../controllers/ModController')
 const chan_controller = require('../controllers/channelController')
+const {user_changePwd_put} = require("../controllers/userController");
 
 
 //User
@@ -18,12 +19,13 @@ router.post("/dbtest", user_controller.dbtest);
 router.post("/login", user_controller.user_login_post);
     // PATCH listing
 router.patch('/updateUser',mod_controller.user_update_patch)
-
+    // PUT listing
+router.put("/changePassword", authenticateToken, user_changePwd_put);
 //Squeal
     // GET listing
-router.get('/allSqueals',mod_controller.squeal_all_get)
+router.get('/allSqueals',mod_controller.squeal_all_get);
     // POST listing
-router.post("/squeal_post", authenticateToken,upload.single('image'), squeal_controller.new_squeal);
+router.post("/squeal_post", authenticateToken, upload.single('image'), squeal_controller.new_squeal);
     // PATCH listing
 router.patch('/updateSqueal',mod_controller.squeal_update_patch)
 
