@@ -2,7 +2,7 @@ const Channel = require("../schemas/channel");
 const User = require('../schemas/users')
 const asyncHandler = require("express-async-handler");
 const jwt = require('jsonwebtoken');
-const {  getCurrentUserFromToken } = require("../router_Handler/authenticateToken");
+const {  getCurrentUserFromToken } = require("../middleware/authenticateToken");
 
 exports.channel_create_post = asyncHandler( async (req, res, next) => {
     const channelInfo = req.body;

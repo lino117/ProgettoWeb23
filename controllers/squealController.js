@@ -14,8 +14,8 @@ const channel_normal = /§[a-z]+/g;
 //create a new squeal
 exports.new_squeal = asyncHandler( async (req, res, next) =>{
 
-    const file = req.file;
-    console.log(file);
+    const image = req.file.filename;
+    console.log(image);
     const squealData = req.body.body;
     console.log(squealData)
     const destinatari = req.body.destinatari;
@@ -34,7 +34,7 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
         recipients: (singleUser) ? singleUser : recipients,
         isPrivate: (squealData.match(mention) !== null || true),
         squealerChannels: channelInDB,
-        image: file.path
+        image: image
     })
     try {
         await squeal.save();
@@ -58,3 +58,4 @@ exports.get_squeals = asyncHandler( async (req, res, next) =>{
     }
     res.send(squealsToShow);
 })
+

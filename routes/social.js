@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const {authenticateToken} = require("../router_Handler/authenticateToken");
-
+const {authenticateToken} = require("../middleware/authenticateToken");
+const upload = require("../middleware/fileHandler");
 const user_controller = require("../controllers/userController");
 const squeal_controller = require("../controllers/squealController");
 const mod_controller = require('../controllers/ModController')
@@ -23,7 +23,7 @@ router.patch('/updateUser',mod_controller.user_update_patch)
     // GET listing
 router.get('/allSqueals',mod_controller.squeal_all_get)
     // POST listing
-router.post("/squeal_post", authenticateToken, squeal_controller.new_squeal);
+router.post("/squeal_post", authenticateToken,upload.single('image'), squeal_controller.new_squeal);
     // PATCH listing
 router.patch('/updateSqueal',mod_controller.squeal_update_patch)
 
