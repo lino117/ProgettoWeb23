@@ -3,6 +3,7 @@ const { Schema, model } = mongoose;
 
 const userSchema = new Schema({
     nickname:{type:String},
+    image: { type: String},
     username: { type: String, required: true},
     password: { type: String, required: true},
     //da completare

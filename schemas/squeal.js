@@ -26,10 +26,10 @@ const squealSchema = new Schema({
     geo: { type: String },
 
     reaction: {
-        like: { type: Number },
-        dislike: { type: Number},
-        impression: { type: Number },
-        CM: { type: Number}
+        like: { type: Number, default: 0 },
+        dislike: { type: Number, default: 0},
+        impression: { type: Number , default: 0},
+        CM: { type: Number, default: 0}
     },
     image: {type: String}
 

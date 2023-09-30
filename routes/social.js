@@ -24,10 +24,14 @@ router.put("/changePassword", authenticateToken, user_changePwd_put);
 //Squeal
     // GET listing
 router.get('/allSqueals',mod_controller.squeal_all_get);
+router.get('/get_all_squeals', squeal_controller.get_squeals);
     // POST listing
 router.post("/squeal_post", authenticateToken, upload.single('image'), squeal_controller.new_squeal);
     // PATCH listing
 router.patch('/updateSqueal',mod_controller.squeal_update_patch)
+router.patch('/likeSqueal', squeal_controller.squeal_like_patch);
+router.patch('/dislikeSqueal', squeal_controller.squeal_dislike_patch);
+
 
 
 //Channel
