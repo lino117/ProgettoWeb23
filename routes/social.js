@@ -1,5 +1,7 @@
 const express = require("express");
+const expressWs = require("express-ws");
 const router = express.Router();
+const wsInstance = expressWs(router);
 const {authenticateToken} = require("../middleware/authenticateToken");
 const upload = require("../middleware/fileHandler");
 const user_controller = require("../controllers/userController");
@@ -19,6 +21,7 @@ router.post("/dbtest", user_controller.dbtest);
 router.post("/login", user_controller.user_login_post);
     // PATCH listing
 router.patch('/updateUser',mod_controller.user_update_patch)
+router.patch('/updateCredit', user_controller.user_changeCredit_patch);
     // PUT listing
 router.put("/changePassword", authenticateToken, user_changePwd_put);
 //Squeal
@@ -32,6 +35,7 @@ router.patch('/updateSqueal',mod_controller.squeal_update_patch)
 router.patch('/likeSqueal', squeal_controller.squeal_like_patch);
 router.patch('/dislikeSqueal', squeal_controller.squeal_dislike_patch);
 
+router.ws('/websoscket', squeal_controller.new_squeal);
 
 
 //Channel

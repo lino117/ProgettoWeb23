@@ -1,5 +1,6 @@
 var createError = require('http-errors');
 var express = require('express');
+var expressWs = require('express-ws');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { expressjwt } = require('express-jwt');
@@ -15,7 +16,7 @@ var usersRouter = require('./routes/users');
 var socialRouter = require('./routes/social');
 
 var app = express();
-
+const wsInstance = expressWs(app);
 const mongoose =require( "mongoose");
 mongoose.connect("mongodb+srv://jinclaudio:Keqingyyds123.@claudiomongo.3ulb5gw.mongodb.net/ProgettoTecweb?retryWrites=true&w=majority");
 mongoose.Promise = global.Promise;

@@ -94,26 +94,25 @@ exports.user_changePwd_put = async (req, res, next) => {
     try {
         const token = req.headers.authorization;
         const currentUser = getCurrentUserFromToken(token);
-        const { oldPassword, newPassword } = req.body;
+        const {oldPassword, newPassword} = req.body;
 
-        const user = await User.findOne({ username: currentUser});
+        const user = await User.findOne({username: currentUser});
         const passwordMatch = oldPassword === user.password;
         console.log(user.password)
         if (!passwordMatch) {
-            return res.status(401).json({ message: 'Password sbagliata' });
+            return res.status(401).json({message: 'Password sbagliata'});
         }
         user.password = newPassword;
         await user.save();
 
-        res.status(200).json({ message: 'Password cambiata' });
+        res.status(200).json({message: 'Password cambiata'});
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Errore mentre cambiare la password', error: error.message });
+        res.status(500).json({message: 'Errore mentre cambiare la password', error: error.message});
     }
 
 }
-
 
 
 exports.user_login_post = asyncHandler(async (req, res, next) => {
@@ -135,6 +134,25 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
         status: 200,
         message: "Logged successfully",
         token: token,
+    })
+
+})
+
+exports.user_changeCredit_patch = asyncHandler(async (req, res) => {
+    const token = req.headers.authorization;
+    const currentUser = getCurrentUserFromToken(token);
+    const consume = req.body.consume
+    console.log(consume)
+    const user = await User.findOne({username: currentUser});
+
+    user.creditAvailable.daily -= consume
+    user.creditAvailable.weekly -= consume
+    user.creditAvailable.monthly -= consume
+    await user.save()
+    res.send({
+        status: 200,
+        message: "Posted successfully",
+        credit: user.creditAvailable,
     })
 
 })

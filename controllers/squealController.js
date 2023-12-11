@@ -43,6 +43,7 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
     ]);//
     const squeal = new Squeal({
         sender: sender._id,
+        username: sender.username,
         body: squealData,
         recipients: (singleUser) ? singleUser : recipients,
         isPrivate: (squealData.match(mention) !== null || true),
@@ -51,7 +52,7 @@ exports.new_squeal = asyncHandler( async (req, res, next) =>{
     })
     try {
         await squeal.save();
-        res.status(200).json({ message: "squeal posted successfully"});
+        res.status(200).json({ message: req.body});
         // console.log(res)
     } catch (error){
         console.log(error);
@@ -96,3 +97,4 @@ exports.squeal_dislike_patch = asyncHandler( async (req, res, next) =>{
     return res.status(200).json(updatedSqueal);
 
 })
+

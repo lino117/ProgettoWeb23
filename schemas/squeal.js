@@ -4,7 +4,7 @@ const { Schema, model } = mongoose;
 
 const squealSchema = new Schema({
     sender: { type: Schema.Types.ObjectId, ref: "User"},
-
+    username: { type: String},
     body: { type: String, required: true},// Può essere testo, immagine, video o geolocazione
     recipients: {
         type: [String], // Elenco di destinatari (individui, canali o keyword)
