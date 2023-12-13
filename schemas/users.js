@@ -14,11 +14,11 @@ const userSchema = new Schema({
     },
     creditInit: { type: Number, min: 0},
     creditAvailable: {
-        daily: {type: Number, default: 0},
-        weekly:{type: Number, default: 0},
-        monthly:{type: Number, default: 0},
+        daily: {type: Number, default: 0, min:0},
+        weekly:{type: Number, default: 0, min: 0},
+        monthly:{type: Number, default: 0, min: 0},
     },
-
+    hasLiked: { type: [String]}
 });
 
 const User = mongoose.model('User', userSchema);

@@ -141,13 +141,15 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
 exports.user_changeCredit_patch = asyncHandler(async (req, res) => {
     const token = req.headers.authorization;
     const currentUser = getCurrentUserFromToken(token);
-    const consume = req.body.consume
-    console.log(consume)
+    const value = req.body.value
+    console.log(value)
     const user = await User.findOne({username: currentUser});
 
-    user.creditAvailable.daily -= consume
-    user.creditAvailable.weekly -= consume
-    user.creditAvailable.monthly -= consume
+    user.creditAvailable.daily += value
+    user.creditAvailable.weekly += value
+    user.creditAvailable.monthly += value
+
+
     await user.save()
     res.send({
         status: 200,
