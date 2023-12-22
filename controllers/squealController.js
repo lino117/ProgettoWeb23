@@ -71,7 +71,36 @@ exports.get_squeals = asyncHandler(async (req, res, next) => {
             squealerChannels: {$in: channels}
         });
     }
-    res.send(squealsToShow);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const total = await Squeal.countDocuments();
+    const pagination = {
+        total,
+        limit
+    };
+    if (endIndex < total) {
+        pagination.next = {
+            page: page + 1,
+            limit
+        };
+    }
+    if (startIndex > 0) {
+        pagination.prev = {
+            page: page - 1,
+            limit
+        };
+    }
+    squealsToShow = await Squeal.find().sort({dateTime: -1}).limit(limit).skip(startIndex).exec();
+    res.send({
+        success: true,
+        count: squealsToShow.length,
+        pagination,
+        data: squealsToShow
+    
+});
+
 })
 
 exports.squeal_like_patch = asyncHandler(async (req, res, next) => {
