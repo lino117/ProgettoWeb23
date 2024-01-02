@@ -75,3 +75,8 @@ exports.channel_block_patch=asyncHandler (async (req,res)=>{
     // res.send(newDate.block ? 'channel blocked' : 'channel unblocked')
     res.send(updatedChan)
 })
+//Channels
+
+exports.channel_trending = asyncHandler(async (req, res, next)=>{
+
+})

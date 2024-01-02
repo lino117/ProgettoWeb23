@@ -8,6 +8,8 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname); // 设置文件名
     }
 });
+
+
 const upload = multer({ storage: storage });
 
 module.exports = upload ;

@@ -18,7 +18,7 @@ const userSchema = new Schema({
         weekly:{type: Number, default: 0, min: 0},
         monthly:{type: Number, default: 0, min: 0},
     },
-    hasLiked: { type: [String]}
+    hasLiked: { type: [String]},
 });
 
 const User = mongoose.model('User', userSchema);
