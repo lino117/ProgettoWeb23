@@ -97,7 +97,7 @@ exports.get_squeals = asyncHandler(async (req, res, next) => {
         })
         squealsToShow = await Squeal.find().sort({dateTime: -1}).exec();
     } else {
-        squealsToShow = await Squeal.find({'squealerChannels.type': 'official'}).populate('squealerChannels');
+        squealsToShow = await Squeal.find({'squealerChannels.typeOf': 'official'}).populate('squealerChannels');
     }
     res.send(squealsToShow);
 })
