@@ -3,6 +3,7 @@ const { Schema, model } = mongoose;
 
 const userSchema = new Schema({
     nickname:{type:String},
+    image: { type: String},
     username: { type: String, required: true},
     password: { type: String, required: true},
     //da completare
@@ -13,11 +14,11 @@ const userSchema = new Schema({
     },
     creditInit: { type: Number, min: 0},
     creditAvailable: {
-        daily: {type: Number},
-        weekly:{type: Number},
-        monthly:{type: Number},
+        daily: {type: Number, default: 0, min:0},
+        weekly:{type: Number, default: 0, min: 0},
+        monthly:{type: Number, default: 0, min: 0},
     },
-
+    hasLiked: { type: [String]},
 });
 
 const User = mongoose.model('User', userSchema);

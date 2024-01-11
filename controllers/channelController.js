@@ -2,7 +2,7 @@ const Channel = require("../schemas/channel");
 const User = require('../schemas/users')
 const asyncHandler = require("express-async-handler");
 const jwt = require('jsonwebtoken');
-const {  getCurrentUserFromToken } = require("../router_Handler/authenticateToken");
+const {  getCurrentUserFromToken } = require("../middleware/authenticateToken");
 
 exports.channel_create_post = asyncHandler( async (req, res, next) => {
     const channelInfo = req.body;
@@ -74,4 +74,9 @@ exports.channel_block_patch=asyncHandler (async (req,res)=>{
     })
     // res.send(newDate.block ? 'channel blocked' : 'channel unblocked')
     res.send(updatedChan)
+})
+//Channels
+
+exports.channel_trending = asyncHandler(async (req, res, next)=>{
+
 })

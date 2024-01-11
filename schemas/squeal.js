@@ -1,13 +1,15 @@
 const mongoose = require("mongoose");
 // const Channel = require("./channel");
-const { Schema, model } = mongoose;
+const { Schema } = mongoose;
 
 const squealSchema = new Schema({
     sender: { type: Schema.Types.ObjectId, ref: "User"},
-
+    username: { type: String},
     body: { type: String, required: true},// Può essere testo, immagine, video o geolocazione
     recipients: {
-        type: [String], // Elenco di destinatari (individui, canali o keyword)
+        // Elenco di destinatari (individui, canali o keyword)
+        users:{ type: [Schema.Types.ObjectId], ref: "User"},
+        keywords: { type: [String]}
     },
     dateTime: {
         type: Date,
@@ -19,18 +21,20 @@ const squealSchema = new Schema({
         enum: ['popolare', 'impopolare', 'controverso'], // Categoria del messaggi
     },
     squealerChannels: {
-        type: [{
-            type:Schema.Types.ObjectId, ref: "Channel"}], // Canali Squealer a cui è stato aggiunto dalla redazione
+        type: [{type:Schema.Types.ObjectId, ref: "Channel"}], // Canali Squealer a cui è stato aggiunto dalla redazione
     },
     automaticMessage: { type: Boolean,  default: false},
     geo: { type: String },
 
     reaction: {
-        like: { type: Number },
-        dislike: { type: Number},
-        impression: { type: Number },
-        CM: { type: Number}
+        like: { type: Number, default: 0 },
+        dislike: { type: Number, default: 0},
+        impression: { type: Number , default: 0},
+        CM: { type: Number, default: 0}
     },
+    image: {type: String},
+    replies: { type: [Schema.Types.ObjectId], ref: "Reply"},
+
 
 });
 
