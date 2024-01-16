@@ -3,6 +3,8 @@ const Squeal = require("../schemas/squeal");
 const asyncHandler = require("express-async-handler");
 const jwt = require('jsonwebtoken');
 const {secretToken, getCurrentUserFromToken} = require("../middleware/authenticateToken");
+const {join} = require("path");
+const path = require("path");
 // const bcrypt = require("bcrypt");
 
 //non è necessario alcun param, se l'utente è loggato, ritorna tutti i campi
@@ -17,11 +19,9 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
 
 
     // console.log(userId);
-    const [user, allSquealByUser] = await Promise.all([
-        User.findOne({username: currentUser}).exec(),
-        Squeal.find({username: currentUser}, "summary").exec(),
-    ]);
-    console.log(user)
+    const user = await User.findOne({username: currentUser}).exec();
+    const allSquealByUser = await Squeal.find({ sender: user})
+    console.log(allSquealByUser)
     if (user === null) {
         const error = new Error("User not found");
         error.status = 404;
@@ -34,6 +34,27 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
     res.send(userData);
 })
 
+exports.user_another = asyncHandler(async (req, res, next) => {
+    const username = req.body.username
+
+    console.log(user)
+    const user = await User.findOne({username: username})
+    if (user === null) {
+        const error = new Error("User not found");
+        error.status = 404;
+        return next(error);
+    } else {
+        const userData = {
+            username: user.username,
+
+        }
+    }
+    const userData = {
+        user: user,
+        squeals: allSquealByUser,
+    };
+    res.send(userData);
+})
 exports.user_regist_post = asyncHandler(async (req, res, next) => {
     const userInfo = req.body;
 
@@ -127,7 +148,8 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
         });
     }
 
-    const token = jwt.sign({username: userInfo.username}, "tecweb2223", {
+    const token = jwt.sign({
+        username: userInfo.username, userType: userInfo.accountType}, secretToken, {
         // expiresIn: "1h",
     });
     res.send({
@@ -157,6 +179,31 @@ exports.user_changeCredit_patch = asyncHandler(async (req, res) => {
         credit: user.creditAvailable,
     })
 
+})
+
+exports.avatar_change = asyncHandler(async (req, res, next) => {
+    const avatar = req.file.filename
+    console.log(avatar)
+    const token = req.headers.authorization;
+    try {
+        const user = await User.findOne({username: getCurrentUserFromToken(token)})
+        user.image = avatar
+        console.log(user)
+        user.save()
+        res.status(200).json({message: "profilo aggiornato con successo"});
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({error: error})
+    }
+})
+
+exports.avatar_get = asyncHandler(async (req, res, next) => {
+    const filename = req.query.image
+    const imagePath = join(path.resolve(__dirname, '..'), 'public/avatars', filename)
+    console.log(filename)
+    console.log(imagePath)
+    res.sendFile(imagePath)
 })
 
 exports.chooseSMM = asyncHandler(async (req, res) => {

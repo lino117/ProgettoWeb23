@@ -20,7 +20,7 @@ function authenticateToken(req, res, next) {
 function getCurrentUserFromToken(token) {
     const decoded = jwt.verify(token.replace('Bearer ', ''), secretToken);
     // const currentUser = decoded.usernsame;
-    return decoded.username;
+    return decoded;
 }
 module.exports = { authenticateToken, secretToken, getCurrentUserFromToken };
 // module.exports = secretToken;

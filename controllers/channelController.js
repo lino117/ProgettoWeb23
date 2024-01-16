@@ -80,3 +80,7 @@ exports.channel_block_patch=asyncHandler (async (req,res)=>{
 exports.channel_trending = asyncHandler(async (req, res, next)=>{
 
 })
+
+exports.channel_getContenteOfOneChannel = asyncHandler(async (req, res, next)=>{
+
+})
