@@ -9,7 +9,7 @@ const channelSchema = new Schema({
         type: String,
         enum: [ "private", "official"],
     },
-    labelOfChannel: {type: String},
+    description: {type: String},
     followers: { type: Number, min: 0,default: 1},
     isUnmuteable:{type: Boolean, default:false},
     members: [{ type: Schema.Types.ObjectId, ref: "User"}],

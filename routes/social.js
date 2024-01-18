@@ -31,12 +31,16 @@ router.get('/singleSqueal', squeal_controller.single_squeal_get);
 router.get('/get_all_squeals', squeal_controller.get_squeals);
 router.get('/get_image', squeal_controller.image_get);
 router.get('/get_views', squeal_controller.views_get)
+router.get('/channelSqueal_get',mod_controller.channelSqueal_get)
 // POST listing
 router.post("/squeal_post", authenticateToken, upload.single('image'), squeal_controller.new_squeal);
 router.post("/squeal_reply", authenticateToken,  squeal_controller.reply_post);
 
 // PATCH listing
 router.patch('/updateSqueal', mod_controller.squeal_update_patch)
+router.patch('/addSquealChannel',mod_controller.addSquealChannel)
+router.patch('/delSquealChannel',mod_controller.delSquealChannel)
+
 router.patch('/likeSqueal', reaction_controller.squeal_like_patch);
 router.patch('/dislikeSqueal', reaction_controller.squeal_dislike_patch);
 
@@ -51,6 +55,10 @@ router.get('/allChannelP', mod_controller.channelPriv_all_get)
 router.post('/createCh', chan_controller.channel_create_post)
 // PATCH listing
 router.patch('/updateChannel', chan_controller.channel_update_patch)
+router.patch('/updateChannelOff',  mod_controller.channelOff_update_patch)
 router.patch('/blockChannel', chan_controller.channel_block_patch)
+// PUT listing, per eliminare un canale viene usato PUT invece che DELETE poiche secondo il mio parere
+// quest ultimo viene usato per eliminare una risorsa del lato server invece di una risorsa su database
+router.put('/deleteChannel',mod_controller.channelOffi_delete_put)
 
 module.exports = router;

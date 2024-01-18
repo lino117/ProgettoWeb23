@@ -16,10 +16,16 @@ const asyncHandler = require("express-async-handler");
          },
      ])
  }
+arrayEqual= async (arrayA, arrayB)=>{
+    return JSON.stringify(arrayA)  !==  JSON.stringify(arrayB)
+}
 
 //get the list of all users
 exports.user_list = asyncHandler(async (req, res, next) => {
-    const allUsers = await User.find().sort({username: 1}).exec();
+    const showNumber = (req.query.showNumber)
+
+    const allUsers = await User.find().sort({username: 1}).limit(showNumber).exec();
+
     res.send(allUsers);
 })
 
@@ -52,7 +58,7 @@ exports.user_update_patch = asyncHandler(async (req, res)=>{
            returnDocument : 'after',
         }
         )
-        newUser.push(updatedUser)
+        newUser.push(updatedUser.username)
         // console.log(updatedUser)
     }
 
@@ -61,19 +67,22 @@ exports.user_update_patch = asyncHandler(async (req, res)=>{
     res.send(newUser)
     // res.status(200).send(body)
 })
+exports.channelSqueal_get = asyncHandler(async (req,res)=>{
+    const channelName = req.query.channelName
+    const channel= await Channel.findOne({name:channelName}).exec()
+    // mongoose.populate 用于 得到那个obj id的信息， 比如正常的话是显示 obj，id， 如果有populate那个field， 那就会显示那个obj，id的所有信息
+    const channelSqueal = await Squeal.find({squealerChannels :channel._id} ).sort({dateTime:1}).limit(3).exec()
 
+    res.send(channelSqueal)
+})
 exports.squeal_all_get = asyncHandler(async (req, res, next) => {
-
-    const allSqueals = await Squeal.find().sort({dateTime:1}).limit(3).exec();
+    const showNumber =req.query.showNumber
+    const allSqueals = await Squeal.find().sort({dateTime:1}).limit(showNumber).exec();
     console.log(allSqueals)
     res.send(allSqueals);
 })
-arrayEqual= async (arrayA, arrayB)=>{
-     return JSON.stringify(arrayA)  !==  JSON.stringify(arrayB)
-}
 exports.squeal_update_patch = asyncHandler( async (req, res)=>{
     const newDate = req.body;
-
     var noRecipFound = []
     var resultSqueal =[]
     var newReaction = {
@@ -132,16 +141,65 @@ exports.squeal_update_patch = asyncHandler( async (req, res)=>{
     const noChannelMsg = (noRecipFound? 'ci sono alcuni canali non esistenti'+noRecipFound : '')
     res.send(resultSqueal)
 })
+exports.addSquealChannel = asyncHandler(async (req,res)=> {
+    channelName = req.body.channelName
+    squealID = req.body.squealID
+    const channel = await Channel.findOne({name: channelName}).exec()
+    channelID= channel._id
+    const squeal = await Squeal.findByIdAndUpdate(squealID, {
+            squealerChannels: channelID
+        }, {
+            returnDocument: 'after'
+        }
+    )
 
+    console.log(squeal)
+    res.send(squeal)
+})
+exports.delSquealChannel = asyncHandler(async (req,res)=>{
+    squealID = req.body.squealID
+    const squeal = await Squeal.findByIdAndUpdate(squealID,{
+        squealerChannels: null
+    }, {
+        returnDocument: 'after'
+    })
+
+    res.send(squeal)
+})
 exports.channelOffi_all_get = asyncHandler(async (req, res, next) => {
-    const allOffChannel = await Channel.find({typeOf:'official'}).sort({name:1}).exec();
+    const showNumber =parseInt(req.query.showNumber)
+    const allOffChannel = await Channel.find({typeOf:'official'}).sort({name:1}).limit(showNumber).exec();
     res.send(allOffChannel);
 })
 exports.channelPriv_all_get = asyncHandler(async (req, res, next) => {
-    const allPrivChannel = await Channel.find({typeOf:'private'}).sort({name:1}).exec();
+    const showNumber =parseInt(req.query.showNumber)
+    const allPrivChannel = await Channel.find({typeOf:'private'}).sort({name:1}).limit(showNumber).exec();
     res.send(allPrivChannel);
 })
+exports.channelOffi_delete_put =asyncHandler (async (req,res)=>{
+    const channelIDs = req.body
+    console.log(channelIDs)
+    var deletedChannel=[]
+    for (const channelID of channelIDs) {
+        const channel = await Channel.findById(channelID).exec()
+        deletedChannel.push(channel.name)
+        await Channel.findByIdAndDelete(channelID).exec()
 
+    }
+    res.send(deletedChannel)
+})
+exports.channelOff_update_patch = asyncHandler(async (req,res)=>{
+    const channelInfo = req.body
+    var updatedChannel = []
+    for (const newInfos of channelInfo) {
+        const channel = await Channel.findOneAndUpdate({name:newInfos.channelName},{
+            description : newInfos.description
+        })
+        updatedChannel.push(channel.name)
+    }
+    res.send(updatedChannel)
+
+})
 
 
 

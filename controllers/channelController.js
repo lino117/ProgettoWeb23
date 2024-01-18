@@ -6,9 +6,13 @@ const {  getCurrentUserFromToken } = require("../middleware/authenticateToken");
 
 exports.channel_create_post = asyncHandler( async (req, res, next) => {
     const channelInfo = req.body;
-    const token =  req.headers.authorization;
-    let admin = await User.findOne({username:getCurrentUserFromToken(token)}).exec()
-
+    var admin
+    if (channelInfo.typeOf === 'private') {
+        const token = req.headers.authorization;
+         admin = await User.findOne({username: getCurrentUserFromToken(token)}).exec()
+    }else{
+         admin = await User.findById('65a95e3e38704f21130ff999').exec()
+    }
     const existingChannel = await Channel.findOne({ name: channelInfo.name});
     if (existingChannel){
         console.log("channel esistente")
@@ -19,7 +23,7 @@ exports.channel_create_post = asyncHandler( async (req, res, next) => {
         name: channelInfo.name,
         admin: admin._id,
         typeOf : channelInfo.type,
-        labelOfChannel: channelInfo.label,
+        description: channelInfo.desc,
         members:admin._id
     })
    // await channel.save()

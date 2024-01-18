@@ -37,7 +37,6 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
 exports.user_regist_post = asyncHandler(async (req, res, next) => {
     const userInfo = req.body;
 
-    console.log(userInfo);
     const existingUser = await User.findOne({username: userInfo.username});
     if (existingUser) {
         console.log("utente esistente")
@@ -48,7 +47,7 @@ exports.user_regist_post = asyncHandler(async (req, res, next) => {
         nickname: userInfo.username,
         username: userInfo.username,
         password: userInfo.password,
-        userType: userInfo.userType,
+        accountType: userInfo.userType,
         creditInit: userInfo.creditInit,
         creditAvailable: {
             daily: userInfo.creditInit,
