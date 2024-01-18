@@ -87,17 +87,13 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
 })
 
 exports.get_squeals = asyncHandler(async (req, res, next) => {
-    const token = req.headers.authorization;
     let squealsToShow;
-    if (token) {
-        jwt.verify(token.replace('Bearer ', ''), secretToken, (err, user) => {
-            if (err) {
-                return res.status(403).json({error: 'Invalid token'});
-            }
-        })
+    console.log(req.user)
+    if (req.user) {
+
         squealsToShow = await Squeal.find().sort({dateTime: -1}).exec();
     } else {
-        squealsToShow = await Squeal.find({'squealerChannels.type': 'official'}).populate('squealerChannels');
+        squealsToShow = await Squeal.find({'squealerChannels.typeOf': 'official'}).populate('squealerChannels');
     }
     res.send(squealsToShow);
 })

@@ -14,10 +14,13 @@ const {user_changePwd_put} = require("../controllers/userController");
 // GET listing
 router.get("/user_detail", authenticateToken, user_controller.user_detail);
 router.get("/get_all_users", mod_controller.user_list);
+router.get("/get_avatar", user_controller.avatar_get);
 // POST listing
 router.post("/register", user_controller.user_regist_post);
 router.post("/dbtest", user_controller.dbtest);
 router.post("/login", user_controller.user_login_post);
+router.post("/post_avatar", authenticateToken, upload.single('image'), user_controller.avatar_change);
+
 // PATCH listing
 router.patch('/updateUser', mod_controller.user_update_patch)
 router.patch('/updateCredit', user_controller.user_changeCredit_patch);
@@ -28,7 +31,7 @@ router.put("/changePassword", authenticateToken, user_changePwd_put);
 // GET listing
 router.get('/allSqueals', mod_controller.squeal_all_get);
 router.get('/singleSqueal', squeal_controller.single_squeal_get);
-router.get('/get_all_squeals', squeal_controller.get_squeals);
+router.get('/get_all_squeals',authenticateToken, squeal_controller.get_squeals);
 router.get('/get_image', squeal_controller.image_get);
 router.get('/get_views', squeal_controller.views_get)
 router.get('/channelSqueal_get',mod_controller.channelSqueal_get)
