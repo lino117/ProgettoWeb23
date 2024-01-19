@@ -28,7 +28,28 @@ exports.user_list = asyncHandler(async (req, res, next) => {
 
     res.send(allUsers);
 })
+exports.filter_user_list = asyncHandler(async (req,res)=>{
+    const userFilter = req.query.filter
+    const filter ={}
+    if (userFilter.filterName){
+        filter.username = new RegExp(userFilter.filterName, 'gi')
+    }
+    if ( parseInt(userFilter.filtPop) !== 0){
+        filter.filtRule = userFilter.filtRule
+        filter.filtPop =userFilter.filtPop
+    }
+    if (userFilter.filtType){
+        filter.accountType=userFilter.filtType
+    }
+    var allUsers
+    if(filter){
+         allUsers  = await User.find(filter).sort({username: 1}).limit(userFilter.showNumber).exec()
+    }else {
+         allUsers  = await User.find().sort({username: 1}).limit(userFilter.showNumber).exec()
 
+    }
+    res.send(allUsers)
+})
 exports.user_update_patch = asyncHandler(async (req, res)=>{
     const newDate = req.body;
     var newCredit = {

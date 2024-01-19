@@ -15,6 +15,7 @@ const {user_changePwd_put} = require("../controllers/userController");
 router.get("/user_detail", authenticateToken, user_controller.user_detail);
 router.get("/get_all_users", mod_controller.user_list);
 router.get("/get_avatar", user_controller.avatar_get);
+router.get('/get_filt_users',mod_controller.filter_user_list)
 // POST listing
 router.post("/register", user_controller.user_regist_post);
 router.post("/dbtest", user_controller.dbtest);

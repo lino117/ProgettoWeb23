@@ -19,6 +19,9 @@ const userSchema = new Schema({
         monthly:{type: Number, default: 0, min: 0},
     },
     hasLiked: { type: [String]},
+},{
+    // // rimuove quando un filter applica una proprieta che non esiste in schema
+    // strictQuery: true
 });
 
 const User = mongoose.model('User', userSchema);
