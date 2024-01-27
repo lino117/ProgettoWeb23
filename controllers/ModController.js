@@ -3,6 +3,8 @@ const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
 const Channel = require('../schemas/channel')
 const asyncHandler = require("express-async-handler");
+const {now} = require("mongoose");
+const {squeal} = require("../middleware/users");
 
  joinSchema = async (mainSchema,secSchema,localField,foreignField,nameTable)=>{
      mainSchema.aggregate([
@@ -97,9 +99,58 @@ exports.channelSqueal_get = asyncHandler(async (req,res)=>{
     res.send(channelSqueal)
 })
 exports.squeal_all_get = asyncHandler(async (req, res, next) => {
-    const showNumber =req.query.showNumber
-    const allSqueals = await Squeal.find().sort({dateTime:1}).limit(showNumber).exec();
-    console.log(allSqueals)
+    const squealFilter = req.query.squealFilter
+    const filter={
+    }
+    if (squealFilter.autor){
+        filter.autor = new RegExp(squealFilter.autor, 'gi')
+    }
+    if(squealFilter.recipient){
+        filter.recipient = new RegExp(squealFilter.recipient,'gi')
+    }
+
+    if (squealFilter.endTime){
+        filter.endTime=new Date(squealFilter.endTime)
+    }else{
+        filter.endTime=new Date()
+    }
+    filter.endTime.setHours(24)
+    filter.endTime.setMinutes(59)
+    filter.endTime.setSeconds(59)
+
+    if (squealFilter.startTime  ){
+        filter.startTime=new Date(squealFilter.startTime)
+    }else{
+        filter.startTime = new Date('2023-01-01')
+    }
+
+    const squeal = await Squeal.findById(`65773323fd84413290168ae9`).exec()
+    console.log(squealFilter)
+    console.log(filter)
+    if (filter.endTime > filter.startTime){
+        console.log('2024 > 2023')
+    }
+    const allSqueals = await Squeal.aggregate([
+
+        {
+            $match:{
+                autor : filter.autor,
+                recipient : {$in :[filter.recipient]},
+                // great than startTime, less than endTime. e.g. > 01/01 < 31/12
+                dateTime: {
+                    $lte : filter.endTime,
+                    $gte : filter.startTime
+                }
+            }
+        },
+        {
+            $limit : parseInt(squealFilter.showNumber)
+        },
+        {
+            $sort : { dateTime : -1 }
+        }
+    ])
+    // const allSqueals = await Squeal.find(filter).sort({dateTime:1}).limit(showNumber).populate('sender').exec();
     res.send(allSqueals);
 })
 exports.squeal_update_patch = asyncHandler( async (req, res)=>{
