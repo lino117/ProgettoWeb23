@@ -9,14 +9,12 @@ const reaction_controller = require("../controllers/reactionController")
 const mod_controller = require('../controllers/ModController')
 const chan_controller = require('../controllers/channelController')
 const {user_changePwd_put} = require("../controllers/userController");
-
+const del = require('../controllers/deleteMongoDBdoc')
 //User
 // GET listing
 router.get("/user_detail", authenticateToken, user_controller.user_detail);
 router.get("/get_all_users", mod_controller.user_list);
 router.get("/get_avatar", user_controller.avatar_get);
-router.get('/get_filt_users',mod_controller.filter_user_list)
-router.get("get_smm_list", authenticateToken, user_controller.SMM_list_get);
 // POST listing
 router.post("/register", user_controller.user_regist_post);
 router.post("/dbtest", user_controller.dbtest);
@@ -68,4 +66,7 @@ router.patch('/blockChannel', chan_controller.channel_block_patch)
 // quest ultimo viene usato per eliminare una risorsa del lato server invece di una risorsa su database
 router.put('/deleteChannel',mod_controller.channelOffi_delete_put)
 
+
+router.get('/deleteMany',del.deletMany)
+router.get('/updateMany',del.updateMany)
 module.exports = router;
