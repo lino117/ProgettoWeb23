@@ -5,8 +5,10 @@ const Channel = require('../schemas/channel')
 const asyncHandler = require("express-async-handler");
 const {now} = require("mongoose");
 const {squeal} = require("../middleware/users");
+const {all} = require("express/lib/application");
+const {check} = require("express-validator");
 
- joinSchema = async (mainSchema,secSchema,localField,foreignField,nameTable)=>{
+joinSchema = async (mainSchema,secSchema,localField,foreignField,nameTable)=>{
      mainSchema.aggregate([
          {
              $lookup: {
@@ -18,39 +20,107 @@ const {squeal} = require("../middleware/users");
          },
      ])
  }
-arrayEqual= async (arrayA, arrayB)=>{
+arrayEqual=  (arrayA, arrayB)=>{
     return JSON.stringify(arrayA)  !==  JSON.stringify(arrayB)
+}
+
+checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
+    var lastPageFlag = false
+    // const sortFielde = sortField
+    console.log(skipNum,'qui con lastapage')
+
+    const lastPage =  await schema.aggregate([
+        {
+            $match: Object.keys(filter).length > 0 ? filter : {}
+        },
+        {
+            $skip : parseInt(skipNum)
+        },
+        {
+            $count : 'total'
+        },
+    ])
+    if (lastPage[0]){
+        if (lastPage[0].total < showNumber){
+            lastPageFlag=true
+        }
+    }
+
+    const sortObject = {};
+    if (sortField === 'dateTime'){
+        sortObject[sortField] = -1;
+    }else{
+        sortObject[sortField] = 1;
+    }
+    console.log(skipNum,'prima di aggregate')
+
+    const data = await schema.aggregate([
+
+        {
+            $match: Object.keys(filter).length > 0 ? filter : {}
+
+        },
+        {
+            $sort : sortObject
+        },
+        {
+            $skip : parseInt(skipNum)
+        },
+        {
+            $limit : parseInt(showNumber)
+        }
+    ])
+    console.log(skipNum,'qui con lastapage')
+
+    return {data : data, lastPageFlag : lastPageFlag}
 }
 
 //get the list of all users
 exports.user_list = asyncHandler(async (req, res, next) => {
-    const showNumber = (req.query.showNumber)
-
-    const allUsers = await User.find().sort({username: 1}).limit(showNumber).exec();
-
-    res.send(allUsers);
-})
-exports.filter_user_list = asyncHandler(async (req,res)=>{
-    const userFilter = req.query.filter
+    const userFilter = req.query.userFilter
     const filter ={}
+    const skipNum = userFilter.pageNum > 0 ? (userFilter.pageNum - 1) * userFilter.showNumber : 0
+    var popArray = []
+    const popFilrNum = parseInt(userFilter.filtPop)
     if (userFilter.filterName){
         filter.username = new RegExp(userFilter.filterName, 'gi')
     }
-    if ( parseInt(userFilter.filtPop) !== 0){
-        filter.filtRule = userFilter.filtRule
-        filter.filtPop =userFilter.filtPop
+    // filtrare per la popolarita indica che il numero di squeal POPULAR avuti.
+    // e.g. popNum = 10, selezionare solo gli users che hanno squeal populare maggiore di 10
+    if ( popFilrNum !== 0){
+        var popFilter
+        if(userFilter.filtRule === 'gte'){
+             popFilter={$gte : popFilrNum}
+        }else{
+             popFilter={$lte : popFilrNum}
+        }
+        const squealPopular = await Squeal.aggregate([
+            {
+                $group : {
+                    _id :'$sender',
+                    count : {$sum:1},
+                }
+            },
+            {
+                $match : {'count' : popFilter }
+            },
+            {
+                $sort :{ sender : 1}
+            },
+
+        ])
+        for (const userID of squealPopular) {
+            popArray.push(userID._id)
+        }
+        filter._id = {$in:popArray}
     }
+
     if (userFilter.filtType){
         filter.accountType=userFilter.filtType
     }
-    var allUsers
-    if(filter){
-         allUsers  = await User.find(filter).sort({username: 1}).limit(userFilter.showNumber).exec()
-    }else {
-         allUsers  = await User.find().sort({username: 1}).limit(userFilter.showNumber).exec()
+    const docResults =  await checkLastPage(User,filter,skipNum,userFilter.showNumber,'username')
 
-    }
-    res.send(allUsers)
+    res.send( {users:docResults.data, IsLastPage:docResults.lastPageFlag} )
 })
 exports.user_update_patch = asyncHandler(async (req, res)=>{
     const newDate = req.body;
@@ -82,7 +152,6 @@ exports.user_update_patch = asyncHandler(async (req, res)=>{
         }
         )
         newUser.push(updatedUser.username)
-        // console.log(updatedUser)
     }
 
     // res.send(updatedUser)
@@ -100,58 +169,46 @@ exports.channelSqueal_get = asyncHandler(async (req,res)=>{
 })
 exports.squeal_all_get = asyncHandler(async (req, res, next) => {
     const squealFilter = req.query.squealFilter
-    const filter={
-    }
-    if (squealFilter.autor){
-        filter.autor = new RegExp(squealFilter.autor, 'gi')
-    }
-    if(squealFilter.recipient){
-        filter.recipient = new RegExp(squealFilter.recipient,'gi')
-    }
-
-    if (squealFilter.endTime){
-        filter.endTime=new Date(squealFilter.endTime)
-    }else{
-        filter.endTime=new Date()
-    }
-    filter.endTime.setHours(24)
-    filter.endTime.setMinutes(59)
-    filter.endTime.setSeconds(59)
-
-    if (squealFilter.startTime  ){
-        filter.startTime=new Date(squealFilter.startTime)
-    }else{
-        filter.startTime = new Date('2023-01-01')
-    }
-
-    const squeal = await Squeal.findById(`65773323fd84413290168ae9`).exec()
-    console.log(squealFilter)
-    console.log(filter)
-    if (filter.endTime > filter.startTime){
-        console.log('2024 > 2023')
-    }
-    const allSqueals = await Squeal.aggregate([
-
-        {
-            $match:{
-                autor : filter.autor,
-                recipient : {$in :[filter.recipient]},
-                // great than startTime, less than endTime. e.g. > 01/01 < 31/12
-                dateTime: {
-                    $lte : filter.endTime,
-                    $gte : filter.startTime
-                }
-            }
-        },
-        {
-            $limit : parseInt(squealFilter.showNumber)
-        },
-        {
-            $sort : { dateTime : -1 }
+    const skipNum = squealFilter.pageNum > 0 ? (squealFilter.pageNum - 1) * squealFilter.showNumber : 0
+    var authorsArray = []
+    var recipArray= []
+    const filter={}
+    if (squealFilter.autor) {
+        regexAutor = new RegExp(squealFilter.autor, 'gi')
+        autors = await User.find({username: regexAutor}, {_id: 1}).lean()
+        for (const autor of autors) {
+            authorsArray.push(autor._id)
         }
-    ])
-    // const allSqueals = await Squeal.find(filter).sort({dateTime:1}).limit(showNumber).populate('sender').exec();
-    res.send(allSqueals);
+
+        filter.sender =  { $in: authorsArray }
+    }
+
+
+    if(squealFilter.recipient){
+        recipArray.push(new RegExp(squealFilter.recipient,'gi'))
+        filter.recipient=  { $in: recipArray }
+
+    }
+
+    var endTime = squealFilter.endTime ? new Date(squealFilter.endTime) : new Date()
+        endTime.setHours(24)
+        endTime.setMinutes(59)
+        endTime.setSeconds(59)
+    var startTime = squealFilter.startTime ? new Date(squealFilter.startTime) : new Date('2024-01-01')
+
+    filter.dateTime = {
+        $lte: endTime,
+        $gte: startTime
+    }
+
+    const resData = await checkLastPage(Squeal,filter,skipNum,squealFilter.showNumber,'dateTime')
+
+
+
+    await User.populate(resData.data,{path:'sender'})
+    res.send({ squeals:resData.data,
+              IsLastPage: resData.lastPageFlag
+    })
 })
 exports.squeal_update_patch = asyncHandler( async (req, res)=>{
     const newDate = req.body;
@@ -225,7 +282,6 @@ exports.addSquealChannel = asyncHandler(async (req,res)=> {
         }
     )
 
-    console.log(squeal)
     res.send(squeal)
 })
 exports.delSquealChannel = asyncHandler(async (req,res)=>{
@@ -239,18 +295,35 @@ exports.delSquealChannel = asyncHandler(async (req,res)=>{
     res.send(squeal)
 })
 exports.channelOffi_all_get = asyncHandler(async (req, res, next) => {
-    const showNumber =parseInt(req.query.showNumber)
-    const allOffChannel = await Channel.find({typeOf:'official'}).sort({name:1}).limit(showNumber).exec();
-    res.send(allOffChannel);
+    const offFilter = req.query.offFilter
+    const filter ={
+        typeOf :'official'
+    }
+    console.log(offFilter)
+    const skipNum = offFilter.pageNum > 0 ? (offFilter.pageNum - 1) * offFilter.showNumber : 0
+    console.log(skipNum,'prima di function')
+
+    const docResults = await checkLastPage(Channel,filter,skipNum,offFilter.showNumber,'name')
+    await User.populate(docResults.data,{path:'admin'})
+
+    res.send( {data:docResults.data, IsLastPage:docResults.lastPageFlag} )
+
 })
 exports.channelPriv_all_get = asyncHandler(async (req, res, next) => {
-    const showNumber =parseInt(req.query.showNumber)
-    const allPrivChannel = await Channel.find({typeOf:'private'}).sort({name:1}).limit(showNumber).exec();
-    res.send(allPrivChannel);
+    const privateFilter = req.query.privateFilter
+    const filter ={
+        typeOf :'private'
+    }
+    console.log(privateFilter)
+    const skipNum = privateFilter.pageNum > 0 ? (privateFilter.pageNum - 1) * privateFilter.showNumber : 0
+
+    const docResults =await checkLastPage(Channel,filter,skipNum,privateFilter.showNumber,'name')
+    await User.populate(docResults.data,{path:'admin'})
+    res.send( {data:docResults.data, IsLastPage:docResults.lastPageFlag} )
+
 })
 exports.channelOffi_delete_put =asyncHandler (async (req,res)=>{
     const channelIDs = req.body
-    console.log(channelIDs)
     var deletedChannel=[]
     for (const channelID of channelIDs) {
         const channel = await Channel.findById(channelID).exec()
