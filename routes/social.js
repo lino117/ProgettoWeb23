@@ -16,6 +16,7 @@ router.get("/user_detail", authenticateToken, user_controller.user_detail);
 router.get("/get_all_users", mod_controller.user_list);
 router.get("/get_avatar", user_controller.avatar_get);
 router.get('/get_filt_users',mod_controller.filter_user_list)
+router.get("get_smm_list", authenticateToken, user_controller.SMM_list_get);
 // POST listing
 router.post("/register", user_controller.user_regist_post);
 router.post("/dbtest", user_controller.dbtest);
@@ -24,7 +25,7 @@ router.post("/post_avatar", authenticateToken, upload.single('image'), user_cont
 
 // PATCH listing
 router.patch('/updateUser', mod_controller.user_update_patch)
-router.patch('/updateCredit', user_controller.user_changeCredit_patch);
+router.patch('/updateCredit', authenticateToken, user_controller.user_changeCredit_patch);
 // PUT listing
 router.put("/changePassword", authenticateToken, user_changePwd_put);
 
@@ -36,9 +37,11 @@ router.get('/get_all_squeals',authenticateToken, squeal_controller.get_squeals);
 router.get('/get_image', squeal_controller.image_get);
 router.get('/get_views', squeal_controller.views_get)
 router.get('/channelSqueal_get',mod_controller.channelSqueal_get)
+router.get('/reply_get', squeal_controller.reply_get)
+
 // POST listing
 router.post("/squeal_post", authenticateToken, upload.single('image'), squeal_controller.new_squeal);
-router.post("/squeal_reply", authenticateToken,  squeal_controller.reply_post);
+router.post("/squeal_reply", authenticateToken, upload.none(), squeal_controller.reply_post);
 
 // PATCH listing
 router.patch('/updateSqueal', mod_controller.squeal_update_patch)

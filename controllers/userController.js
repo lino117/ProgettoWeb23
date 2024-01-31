@@ -10,16 +10,16 @@ const path = require("path");
 //non è necessario alcun param, se l'utente è loggato, ritorna tutti i campi
 //includere jwt nell'header Authorization
 exports.user_detail = asyncHandler(async (req, res, next) => {
-    const token = req.headers.authorization;
+    // const token = req.headers.authorization;
     // const decoded = jwt.verify(token.replace('Bearer ', ''), secretToken);
 
-    const currentUser = getCurrentUserFromToken(token);
-
+    // const currentUser = getCurrentUserFromToken(token);
+    const currentUser = req.user
     console.log('Current user:', currentUser);
 
 
     // console.log(userId);
-    const user = await User.findOne({username: currentUser}).exec();
+    const user = await User.findOne({username: currentUser.username}).exec();
     const allSquealByUser = await Squeal.find({ sender: user})
     console.log(allSquealByUser)
     if (user === null) {
@@ -137,32 +137,38 @@ exports.user_changePwd_put = async (req, res, next) => {
 
 exports.user_login_post = asyncHandler(async (req, res, next) => {
     const userInfo = req.body;
-    const loguser = await User.findOne({username: userInfo.username}).exec();
-
-    if (userInfo.username !== loguser.username ||
-        userInfo.password !== loguser.password) {
-        res.send({
-            status: 400,
-            message: "Nome utente o password errato",
+    console.log(userInfo.username)
+    const loguser = await User.findOne({username: userInfo.username});
+    if (loguser === null){
+        return res.status(404).send("User non esistente")
+    }else {
+        console.log(loguser)
+        if (userInfo.username !== loguser.username ||
+            userInfo.password !== loguser.password) {
+            res.send({
+                status: 400,
+                message: "Nome utente o password errato",
+            });
+        }
+        const token = jwt.sign({
+            username: loguser.username, accountType: loguser.accountType}, secretToken, {
+            // expiresIn: "1h",
         });
+        res.send({
+            status: 200,
+            message: "Logged successfully",
+            token: token,
+        })
     }
 
-    const token = jwt.sign({
-        username: userInfo.username, userType: userInfo.accountType}, secretToken, {
-        // expiresIn: "1h",
-    });
-    res.send({
-        status: 200,
-        message: "Logged successfully",
-        token: token,
-    })
 
 })
 
 exports.user_changeCredit_patch = asyncHandler(async (req, res) => {
-    const token = req.headers.authorization;
-    const currentUser = getCurrentUserFromToken(token);
+    const currentUser = req.user.username
     const value = req.body.value
+    console.log('currentUser', currentUser)
+
     console.log(value)
     const user = await User.findOne({username: currentUser});
 
@@ -184,8 +190,10 @@ exports.avatar_change = asyncHandler(async (req, res, next) => {
     const avatar = req.file.filename
     console.log(avatar)
     const token = req.headers.authorization;
+    console.log(getCurrentUserFromToken(token))
     try {
-        const user = await User.findOne({username: getCurrentUserFromToken(token)})
+        const user = await User.findOne({username: getCurrentUserFromToken(token).username})
+        console.log(user)
         user.image = avatar
         console.log(user)
         user.save()
@@ -198,18 +206,47 @@ exports.avatar_change = asyncHandler(async (req, res, next) => {
 })
 
 exports.avatar_get = asyncHandler(async (req, res, next) => {
-    const filename = req.query.image
+    const userid = req.query.user
+    const user = await User.findOne({_id: userid}).select('image')
+    const filename = user.image
     const imagePath = join(path.resolve(__dirname, '..'), 'public/avatars', filename)
     console.log(filename)
     console.log(imagePath)
     res.sendFile(imagePath)
 })
 
-exports.chooseSMM = asyncHandler(async (req, res) => {
+
+exports.SMM_list_get = asyncHandler(async (req, res) => {
+    const userid = req.query.user
+    try{
+        user =  await User.findOne({_id: userid})
+        if (user.accountType === 'vip'){
+            const smms = await User.find({accountType: "smm"})
+            res.status(200).json({smms: smms})
+        } else {
+            res.status(500).json({messagge: 'non sei un utente VIP'})
+
+        }
+    } catch (error){
+        console.log(error)
+    }
+
 
 })
+exports.chooseSMM_post = asyncHandler(async (req, res) => {
+    const userid = req.query.user
+    const SMM = req.body.SMM
+    try {
+        const user = await User.findOne({_id: userid})
+        if (user.accountType === 'vip') {
+            user.managedBy = await User.findOne({_id: SMM})
+        }
+    }catch (error){
+        console.log(error)
+    }
+})
 exports.changeSMM = asyncHandler(async (req, res) => {
-
+    
 })
 exports.chooseVIP = asyncHandler(async (req, res) => {
 

@@ -12,6 +12,7 @@ const userSchema = new Schema({
         enum: ['nor','vip','smm','mod'],
         default: 'nor'
     },
+    managedBy: {type: Schema.Types.ObjectId, ref: "User"}, //if it's SMM
     creditInit: { type: Number, min: 0},
     creditAvailable: {
         daily: {type: Number, default: 0, min:0},
@@ -19,6 +20,7 @@ const userSchema = new Schema({
         monthly:{type: Number, default: 0, min: 0},
     },
     hasLiked: { type: [String]},
+    hasDisliked: { type: [String]}
 },{
     // // rimuove quando un filter applica una proprieta che non esiste in schema
     // strictQuery: true
