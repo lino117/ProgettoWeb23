@@ -20,7 +20,8 @@ const userSchema = new Schema({
         monthly:{type: Number, default: 0, min: 0},
     },
     hasLiked: { type: [String]},
-    hasDisliked: { type: [String]}
+    choosedUser: { type: Schema.Types.ObjectId, ref: "User"},
+
 },{
     // // rimuove quando un filter applica una proprieta che non esiste in schema
     // strictQuery: true
