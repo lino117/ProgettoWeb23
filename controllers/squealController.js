@@ -58,7 +58,6 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
         }
     }
 
-
     const [sender, channelInDB] = await Promise.all([
         User.findOne({username: getCurrentUserFromToken(token)}).exec(),
         Channel.findOne({name: channel})

@@ -3,10 +3,7 @@ const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
 const Channel = require('../schemas/channel')
 const asyncHandler = require("express-async-handler");
-const {now} = require("mongoose");
-const {squeal} = require("../middleware/users");
-const {all} = require("express/lib/application");
-const {check} = require("express-validator");
+
 
 joinSchema = async (mainSchema,secSchema,localField,foreignField,nameTable)=>{
      mainSchema.aggregate([
