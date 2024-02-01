@@ -24,7 +24,17 @@ const squealSchema = new Schema({
         type: [{type:Schema.Types.ObjectId, ref: "Channel"}], // Canali Squealer a cui è stato aggiunto dalla redazione
     },
     automaticMessage: { type: Boolean,  default: false},
-    geo: { type: String },
+    geo: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            required: false,
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: false
+        }
+    },
 
     reaction: {
         like: { type: Number, default: 0 },
@@ -38,6 +48,6 @@ const squealSchema = new Schema({
 
 });
 
-
+squealSchema.index({ geo: '2dsphere' });
 const Squeal = mongoose.model('Squeal', squealSchema);
 module.exports =  Squeal;
