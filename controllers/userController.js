@@ -218,16 +218,17 @@ exports.avatar_get = asyncHandler(async (req, res, next) => {
 
 exports.SMM_list_get = asyncHandler(async (req, res) => {
     const userid = req.query.user
-    try{
-        user =  await User.findOne({_id: userid})
-        if (user.accountType === 'vip'){
+    let user;
+    try {
+        user = await User.findOne({_id: userid})
+        if (user.accountType === 'vip') {
             const smms = await User.find({accountType: "smm"})
             res.status(200).json({smms: smms})
         } else {
             res.status(500).json({messagge: 'non sei un utente VIP'})
 
         }
-    } catch (error){
+    } catch (error) {
         console.log(error)
     }
 
@@ -235,25 +236,48 @@ exports.SMM_list_get = asyncHandler(async (req, res) => {
 })
 exports.chooseSMM_post = asyncHandler(async (req, res) => {
     const userid = req.query.user
+    //use smm's _id
     const SMM = req.body.SMM
+
     try {
         const user = await User.findOne({_id: userid})
         if (user.accountType === 'vip') {
-            user.managedBy = await User.findOne({_id: SMM})
+            const smm = await User.findOne({_id: SMM})
+            smm.manage.push(user)
+            smm.save()
         }
     }catch (error){
         console.log(error)
     }
 })
-exports.changeSMM = asyncHandler(async (req, res) => {
-    
+
+exports.VIP_list_get = asyncHandler(async (req, res) => {
+    const userid = req.query.user
+    let user;
+    try {
+        user = await User.findOne({_id: userid})
+        if (user.accountType === 'smm') {
+            const vips = await User.find({accountType: "vip"})
+            res.status(200).json({vips: vips})
+        } else {
+            res.status(500).json({messagge: 'non sei un utente SMM'})
+
+        }
+    } catch (error) {
+        console.log(error)
+    }
 })
-exports.chooseVIP = asyncHandler(async (req, res) => {
-
+exports.chooseVIP_post = asyncHandler(async (req, res) => {
+    const userid = req.query.user
+    const VIP = req.body.VIP
+    try {
+        const user = await User.findOne({_id: userid})
+        if (user.accountType === 'smm') {
+            const vip = await User.findOne({_id: VIP})
+            user.manage.push(vip)
+            user.save()
+        }
+    }catch (error){
+        console.log(error)
+    }
 })
-exports.changeVIP = asyncHandler(async (req, res) => {
-
-})
-
-
-//

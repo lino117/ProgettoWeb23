@@ -12,6 +12,7 @@ const userSchema = new Schema({
         enum: ['nor','vip','smm','mod'],
         default: 'nor'
     },
+    manage: {type: [Schema.Types.ObjectId], ref: "User"}, //if it's smm
     creditInit: { type: Number, min: 0},
     creditAvailable: {
         daily: {type: Number, default: 0, min:0},
