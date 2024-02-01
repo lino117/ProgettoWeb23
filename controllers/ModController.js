@@ -5,26 +5,12 @@ const Channel = require('../schemas/channel')
 const asyncHandler = require("express-async-handler");
 
 
-joinSchema = async (mainSchema,secSchema,localField,foreignField,nameTable)=>{
-     mainSchema.aggregate([
-         {
-             $lookup: {
-                 from: secSchema,
-                 localField: localField,
-                 foreignField: foreignField,
-                 as: nameTable,
-             },
-         },
-     ])
- }
 arrayEqual=  (arrayA, arrayB)=>{
     return JSON.stringify(arrayA)  !==  JSON.stringify(arrayB)
 }
 
 checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
     var lastPageFlag = false
-    // const sortFielde = sortField
-    console.log(skipNum,'qui con lastapage')
 
     const lastPage =  await schema.aggregate([
         {
@@ -49,7 +35,6 @@ checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
     }else{
         sortObject[sortField] = 1;
     }
-    console.log(skipNum,'prima di aggregate')
 
     const data = await schema.aggregate([
 
@@ -67,7 +52,6 @@ checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
             $limit : parseInt(showNumber)
         }
     ])
-    console.log(skipNum,'qui con lastapage')
 
     return {data : data, lastPageFlag : lastPageFlag}
 }
@@ -94,12 +78,18 @@ exports.user_list = asyncHandler(async (req, res, next) => {
         const squealPopular = await Squeal.aggregate([
             {
                 $group : {
-                    _id :'$sender',
+                    _id :{
+                        sender:'$sender',
+                        popularity:'$popularity'
+                    },
                     count : {$sum:1},
                 }
             },
             {
-                $match : {'count' : popFilter }
+                $match : {
+                    'count' : popFilter,
+                    '_id.popularity' : 'popolare'
+                }
             },
             {
                 $sort :{ sender : 1}
@@ -176,7 +166,6 @@ exports.squeal_all_get = asyncHandler(async (req, res, next) => {
         for (const autor of autors) {
             authorsArray.push(autor._id)
         }
-
         filter.sender =  { $in: authorsArray }
     }
 

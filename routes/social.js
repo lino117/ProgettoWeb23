@@ -8,6 +8,7 @@ const squeal_controller = require("../controllers/squealController");
 const reaction_controller = require("../controllers/reactionController")
 const mod_controller = require('../controllers/ModController')
 const chan_controller = require('../controllers/channelController')
+const smm_controller = require('../controllers/smmController')
 const {user_changePwd_put} = require("../controllers/userController");
 const del = require('../controllers/deleteMongoDBdoc')
 //User
@@ -36,7 +37,6 @@ router.get('/get_image', squeal_controller.image_get);
 router.get('/get_views', squeal_controller.views_get)
 router.get('/channelSqueal_get',mod_controller.channelSqueal_get)
 router.get('/reply_get', squeal_controller.reply_get)
-
 // POST listing
 router.post("/squeal_post", authenticateToken, upload.single('image'), squeal_controller.new_squeal);
 router.post("/squeal_reply", authenticateToken, upload.none(), squeal_controller.reply_post);
@@ -65,6 +65,12 @@ router.patch('/blockChannel', chan_controller.channel_block_patch)
 // PUT listing, per eliminare un canale viene usato PUT invece che DELETE poiche secondo il mio parere
 // quest ultimo viene usato per eliminare una risorsa del lato server invece di una risorsa su database
 router.put('/deleteChannel',mod_controller.channelOffi_delete_put)
+// SMM controller
+router.get('/get_vip_info',smm_controller.getPart)
+router.get('/monitoringSqueal',smm_controller.monitoring)
+router.post('/choose_smm',smm_controller.choosePart)
+router.post('/change_smm',smm_controller.changePart)
+
 
 
 router.get('/deleteMany',del.deletMany)
