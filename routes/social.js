@@ -39,6 +39,7 @@ router.get('/get_image', squeal_controller.image_get);
 router.get('/get_views', squeal_controller.views_get)
 router.get('/channelSqueal_get',mod_controller.channelSqueal_get)
 router.get('/reply_get', squeal_controller.reply_get)
+router.get('/noChannelSqueals',mod_controller.noChannelSqueal_get)
 // POST listing
 router.post("/squeal_post", authenticateToken, upload.single('image'), squeal_controller.new_squeal);
 router.post("/squeal_reply", authenticateToken, upload.none(), squeal_controller.reply_post);
@@ -76,7 +77,7 @@ router.post('/choose_smm',smm_controller.choosePart)
 router.post('/change_smm',smm_controller.changePart)
 router.post('/acceptReq',smm_controller.acceptReq)
 
-
+router.get('/get_smm_list',smm_controller.getSMM)
 
 
 router.get('/deleteMany',del.deletMany)

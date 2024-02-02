@@ -11,7 +11,6 @@ const {secretToken, getCurrentUserFromToken} = require("../middleware/authentica
 const asyncHandler = require("express-async-handler");
 
 const {upload} = require('../middleware/fileHandler');
-const {squeal} = require("../middleware/users");
 const {join, resolve} = require("path");
 const path = require("path");
 const {log} = require("debug");
