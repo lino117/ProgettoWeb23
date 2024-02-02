@@ -2,6 +2,7 @@ const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
 const Channel = require('../schemas/channel')
 const asyncHandler = require("express-async-handler");
+const {log} = require("debug");
 
 exports.choosePart = asyncHandler(async (req,res)=>{
     const whoBeChosen = req.body.beChosenPart
@@ -27,10 +28,18 @@ exports.changePart=asyncHandler(async (req,res)=>{
     res.status(200).send(updatedChoosePart)
 })
 
-exports.getPart = asyncHandler(async (req,res)=>{
-    const partID = req.query.partID
-    const foundUser = await User.findById(partID).populate('choosedUser').exec()
-    res.status(200).send(foundUser)
+exports.getVIP = asyncHandler(async (req,res)=>{
+    const smm = req.user
+    const vip = req.body.vipUser
+    const user = await User.findOne({username: currentUser.username}).exec();
+    const vipUser = await User.findOne({ username: vip}).exec()
+    console.log(allSquealByVIP)
+    if (user === null) {
+        const error = new Error("User not found");
+        error.status = 404;
+        return
+    }
+    res.send(vipUser);
 
 })
 
@@ -70,4 +79,56 @@ exports.monitoring = asyncHandler(async (req,res)=>{
 
 
 })
+
+exports.VIP_list_get = asyncHandler(async (req, res) => {
+    const userlogged = req.user
+    try {
+         const user = await User.findOne({ username: userlogged.username})
+        console.log(user)
+        if (user.accountType === 'smm') {
+            const vips = await User.find({accountType: "vip", choosedUser: user})
+
+            res.status(200).json({vips: vips})
+        } else {
+            res.status(500).json({messagge: 'non sei un utente SMM'})
+
+        }
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+exports.VIP_req_list = asyncHandler(async (req, res) => {
+    const userlogged = req.user
+    try {
+        const user = await User.findOne({ username: userlogged.username})
+        console.log(user)
+        if (user.accountType === 'smm') {
+            const req_list = await Request.find({receiver: user, isAccepted:{$ne: true}})
+            res.status(200).json({requests: req_list})
+        } else {
+            res.status(500).json({messagge: 'non sei un utente SMM'})
+
+        }
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+exports.acceptReq = asyncHandler(async (req, res) => {
+    const request = req.body.request
+    const user = req.user
+    const smm = User.findOne({username: user.username})
+    const reqBody = Request.findOne({sender: request.sender, receiver: smm})
+
+    if (request.accept === true){
+        const vip = User.findOne({_id: request.sender})
+        vip.choosedUser = smm;
+        reqBody.isAccepted = true;
+        await vip.save()
+        await reqBody.save()
+    }
+})
+
+
 

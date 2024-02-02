@@ -1,5 +1,6 @@
 const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
+const Request = require("../schemas/request")
 const asyncHandler = require("express-async-handler");
 const jwt = require('jsonwebtoken');
 const {secretToken, getCurrentUserFromToken} = require("../middleware/authenticateToken");
@@ -20,7 +21,7 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
 
     // console.log(userId);
     const user = await User.findOne({username: currentUser.username}).exec();
-    const allSquealByUser = await Squeal.find({ sender: user})
+    const allSquealByUser = await Squeal.find({sender: user})
     console.log(allSquealByUser)
     if (user === null) {
         const error = new Error("User not found");
@@ -139,9 +140,9 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
     const userInfo = req.body;
     console.log(userInfo.username)
     const loguser = await User.findOne({username: userInfo.username});
-    if (loguser === null){
+    if (loguser === null) {
         return res.status(404).send("User non esistente")
-    }else {
+    } else {
         console.log(loguser)
         if (userInfo.username !== loguser.username ||
             userInfo.password !== loguser.password) {
@@ -151,7 +152,8 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
             });
         }
         const token = jwt.sign({
-            username: loguser.username, accountType: loguser.accountType}, secretToken, {
+            username: loguser.username, accountType: loguser.accountType
+        }, secretToken, {
             // expiresIn: "1h",
         });
         res.send({
@@ -222,7 +224,7 @@ exports.SMM_list_get = asyncHandler(async (req, res) => {
     try {
         user = await User.findOne({_id: userid})
         if (user.accountType === 'vip') {
-            const smms = await User.find({accountType: "smm"})
+            const smms = await User.find({accountType: "smm", choosedUser: {$ne: user}})
             res.status(200).json({smms: smms})
         } else {
             res.status(500).json({messagge: 'non sei un utente VIP'})
@@ -234,8 +236,8 @@ exports.SMM_list_get = asyncHandler(async (req, res) => {
 
 
 })
-exports.chooseSMM_post = asyncHandler(async (req, res) => {
-    const userid = req.query.user
+exports.chooseSMM_request_post = asyncHandler(async (req, res) => {
+    const userid = req.user
     //use smm's _id
     const SMM = req.body.SMM
 
@@ -243,41 +245,16 @@ exports.chooseSMM_post = asyncHandler(async (req, res) => {
         const user = await User.findOne({_id: userid})
         if (user.accountType === 'vip') {
             const smm = await User.findOne({_id: SMM})
-            smm.manage.push(user)
-            smm.save()
-        }
-    }catch (error){
-        console.log(error)
-    }
-})
-
-exports.VIP_list_get = asyncHandler(async (req, res) => {
-    const userid = req.query.user
-    let user;
-    try {
-        user = await User.findOne({_id: userid})
-        if (user.accountType === 'smm') {
-            const vips = await User.find({accountType: "vip"})
-            res.status(200).json({vips: vips})
-        } else {
-            res.status(500).json({messagge: 'non sei un utente SMM'})
-
+            const req_mana = new Request({
+                sender: user,
+                receiver: smm
+            })
+            await req_mana.save()
         }
     } catch (error) {
         console.log(error)
     }
 })
-exports.chooseVIP_post = asyncHandler(async (req, res) => {
-    const userid = req.query.user
-    const VIP = req.body.VIP
-    try {
-        const user = await User.findOne({_id: userid})
-        if (user.accountType === 'smm') {
-            const vip = await User.findOne({_id: VIP})
-            user.manage.push(vip)
-            user.save()
-        }
-    }catch (error){
-        console.log(error)
-    }
-})
+
+
+
