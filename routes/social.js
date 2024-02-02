@@ -68,10 +68,14 @@ router.patch('/blockChannel', chan_controller.channel_block_patch)
 // quest ultimo viene usato per eliminare una risorsa del lato server invece di una risorsa su database
 router.put('/deleteChannel',mod_controller.channelOffi_delete_put)
 // SMM controller
-router.get('/get_vip_info', authenticateToken, )
+router.get('/get_vip_info', authenticateToken, smm_controller.getVIP)
 router.get('/monitoringSqueal',smm_controller.monitoring)
+router.get('/req_list',authenticateToken, smm_controller.VIP_req_list)
+
 router.post('/choose_smm',smm_controller.choosePart)
 router.post('/change_smm',smm_controller.changePart)
+router.post('/acceptReq',smm_controller.acceptReq)
+
 
 
 

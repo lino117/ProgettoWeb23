@@ -33,7 +33,6 @@ exports.getVIP = asyncHandler(async (req,res)=>{
     const vip = req.body.vipUser
     const user = await User.findOne({username: currentUser.username}).exec();
     const vipUser = await User.findOne({ username: vip}).exec()
-    console.log(allSquealByVIP)
     if (user === null) {
         const error = new Error("User not found");
         error.status = 404;
