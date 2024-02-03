@@ -145,6 +145,10 @@ exports.squeal_all_get = asyncHandler(async (req, res, next) => {
     const data = await getResults(Squeal,filter,skipNum,squealFilter.showNumber,'dateTime')
 
     await User.populate(data,{path:'sender'})
+    await User.populate(data,{path:'recipients.users'})
+    await User.populate(data,{path:'recipients.channels'})
+
+    console.log(data)
     res.status(200).send( {squeals:data, IsLastPage:lastPageFlag} )
 
 })
@@ -182,7 +186,8 @@ exports.channelPriv_all_get = asyncHandler(async (req, res, next) => {
 exports.channelSqueal_get = asyncHandler(async (req,res)=>{
     const channelName = req.query.channelName
     const channel= await Channel.findOne({name:channelName}).exec()
-    const channelSqueal = await Squeal.find({squealerChannels :channel._id} ).sort({dateTime:1}).exec()
+    const channelSqueal = await Squeal.find({squealerChannels :channel._id} )
+        .sort({dateTime:1}).populate('sender').exec()
     res.send(channelSqueal)
 })
 exports.noChannelSqueal_get = asyncHandler(async (req,res)=>{
@@ -295,7 +300,9 @@ exports.squeal_update_patch = asyncHandler( async (req, res)=>{
 exports.addSquealChannel = asyncHandler(async (req,res)=> {
     channelName = req.body.channelName
     squealIDs = req.body.squealIDs
+    console.log(req.body)
     const channel = await Channel.findOne({name: channelName}).exec()
+    console.log(channel)
     channelID= channel._id
     var data = []
     for (const squealID of squealIDs) {
