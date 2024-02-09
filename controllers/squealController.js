@@ -4,6 +4,7 @@ const User = require("../schemas/users");
 const Reply = require("../schemas/reply");
 const View = require('../schemas/views');
 const mongoose = require('mongoose')
+
 const fs = require('fs');
 const io = require("../controllers/socketController")
 const jwt = require('jsonwebtoken');
@@ -11,7 +12,6 @@ const {secretToken, getCurrentUserFromToken} = require("../middleware/authentica
 const asyncHandler = require("express-async-handler");
 
 const {upload} = require('../middleware/fileHandler');
-const {squeal} = require("../middleware/users");
 const {join, resolve} = require("path");
 const path = require("path");
 const {log} = require("debug");
@@ -27,18 +27,18 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
     console.log("image", image);
     const squealData = req.body.body;
     const automaticMessage = req.body.automaticMessage;
-    console.log(squealData)
     const destList = req.body.destinatari;
     const destArray = destList ? destList.split(' ') : null;
-    console.log(destArray)
     const coords = {
         longitude: req.body.longitude,
         latitude: req.body.latitude
     }
     const channel = req.body.channel
-    const currentUser = req.user.username
+    let currentUser = req.user.username
+
     let destUsers = [];
     let destKeywords = []
+    if (req.body.sender){ currentUser = req.body.sender}
     if (destArray) {
         if (destArray.length === 1 && destArray[0].match(mention)) {
             let singleUser = destArray[0].match(mention)
@@ -67,10 +67,22 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
         }
     }
 
+    let creditUsage = 0
+    creditUsage += squealData.length
+    if (image){creditUsage += 1000}
+
     const [sender, channelInDB] = await Promise.all([
         User.findOne({username: currentUser}),
         Channel.findOne({name: channel}),
     ]);//
+    if(channelInDB){
+        const totalSqueals = await Squeal.countDocuments({'squealerChannels': channelInDB._id})
+        console.log(totalSqueals)
+        const chan = await Channel.findOneAndUpdate({_id: channelInDB._id},
+            { $set: { SquealNum: totalSqueals}},
+            { new: true}
+        )
+    }
     const squeal = new Squeal({
         sender: sender._id,
         username: sender.username,
@@ -84,17 +96,22 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
         automaticMessage: automaticMessage,
         image: image
     })
-    // if (coords.longitude !== undefined && coords.latitude !== undefined) {
-    //     squeal.geo = {
-    //         type: 'Point',
-    //         coordinates: [coords.longitude, coords.latitude]
-    //     };
-    // }
+    if (coords.longitude !== undefined && coords.latitude !== undefined) {
+        squeal.geo = {
+            type: 'Point',
+            coordinates: [coords.longitude, coords.latitude]
+        };
+    }
+    sender.creditAvailable.daily -= creditUsage;
+    sender.creditAvailable.weekly -= creditUsage;
+    sender.creditAvailable.monthly -= creditUsage;
+
     try {
         await squeal.save();
+        await sender.save()
         // console.log(res)
 
-        res.status(200).json({message: req.body});
+        res.status(200).json({message: req.body, credit: sender.creditAvailable});
     } catch (error) {
         console.log(error);
         res.status(500).json({error: "An error occurred while posting the squeal"});
@@ -102,29 +119,30 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
 })
 
 exports.get_squeals = asyncHandler(async (req, res, next) => {
-    const limit = parseInt(req.query.limit) || 100
-    const skip = parseInt(req.query.skip) || 0
-    let squealsToShow;
-    const totalSqueals = await Squeal.countDocuments(req.user ? {} : {'squealerChannels.typeOf': 'official'});
-    if (skip >= totalSqueals){
-        skip = Math.max(0, totalSqueals - limit)
-    }
-    console.log(req.user)
-    if (req.user) {
 
-        squealsToShow = await Squeal.find()
-            .sort({dateTime: -1})
-            .limit(limit)
-            .skip(skip)
-            .exec();
-    } else {
-        squealsToShow = await Squeal.find({'squealerChannels.typeOf': 'official'}).populate('squealerChannels')
-            .limit(limit)
-            .skip(skip)
-        ;
+    const token = req.header('Authorization');
+
+    const limit = parseInt(req.query.limit) || 100;
+    let skip = parseInt(req.query.skip) || 0;
+
+    // 计算总的 Squeal 数量，如果是未登录用户，仅计算 typeOf 为 'official' 的数量
+    const queryCondition = token ? {} : {'squealerChannels.typeOf': 'official'};
+    const totalSqueals = await Squeal.countDocuments(queryCondition);
+
+    if (skip >= totalSqueals) {
+        skip = Math.max(0, totalSqueals - limit);
     }
+
+    // 根据用户是否登录来调整查询条件
+    const squealsToShow = await Squeal.find(queryCondition)
+        .populate('squealerChannels')
+        .sort({ dateTime: -1 })
+        .limit(limit)
+        .skip(skip);
+
     res.send(squealsToShow);
-})
+});
+
 
 exports.single_squeal_get = asyncHandler(async (req, res) => {
     const id = req.query.id
@@ -197,7 +215,22 @@ exports.reply_get = asyncHandler(async (req, res, next) => {
 })
 
 exports.search_get = asyncHandler(async (req, res, next) => {
-    const word = req.query.word;
+    try {
+        let squealsMatch
+        const word = String(req.query.word);
+        if (/^#/.test(word)) {
+            squealsMatch = await Squeal.find(
+                {'recipients.keywords': new RegExp(word, 'i')})
+
+        } else {
+            squealsMatch =  await Squeal.find({body: new RegExp(word, 'i')})
+
+        }
+        res.status(200).json({squealsMatch})
+    }catch (error) {
+        console.log(error)
+    }
+
 
 
 })
@@ -268,6 +301,41 @@ exports.views_get = asyncHandler(async (req, res, next) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({error: 'Internal Server Error'});
+    }
+
+})
+//da rinnovare ogni giorno, ogni primo giorno della settimana, ogni primo giorno del mese
+exports.renewCredit = asyncHandler(async (frequeanza) => {
+    try {
+        if (frequeanza === 'daily'){
+            const users = await User.updateMany({},
+                {creditAvailable: {daily: 1000}})
+
+        } else if ( frequeanza === 'weekly'){
+            const users = await User.updateMany({},
+                {creditAvailable: {weekly: 6000}})
+        } else if ( frequeanza === 'monthly'){
+            const users = await User.updateMany({},
+                {creditAvailable: {monthly: 6000}})
+        } else {
+            console.log('frequenze sono: daily, weekly, monthly')
+        }
+
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+exports.getGeoSqueals = asyncHandler(async (req, res, next) =>{
+    try {
+        const username = req.user.username
+        const user = await User.findOne({username: username})
+        const geoSqueals = await Squeal
+            .find({sender: user, 'geo.coordinates': { $exists: true, $ne: [] }})
+            .sort({ dateTime: 1})
+        res.status(200).json(geoSqueals)
+    }catch (error){
+        console.log(error)
     }
 
 })

@@ -1,6 +1,6 @@
 const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
-const Request = require("../schemas/request")
+const SMMreq = require("../schemas/request")
 const asyncHandler = require("express-async-handler");
 const jwt = require('jsonwebtoken');
 const {secretToken, getCurrentUserFromToken} = require("../middleware/authenticateToken");
@@ -11,16 +11,14 @@ const path = require("path");
 //non è necessario alcun param, se l'utente è loggato, ritorna tutti i campi
 //includere jwt nell'header Authorization
 exports.user_detail = asyncHandler(async (req, res, next) => {
-    // const token = req.headers.authorization;
-    // const decoded = jwt.verify(token.replace('Bearer ', ''), secretToken);
 
-    // const currentUser = getCurrentUserFromToken(token);
-    const currentUser = req.user
+    let currentUser = req.user
     console.log('Current user:', currentUser);
-
+    if (req.query.user){ currentUser = req.query.user}
 
     // console.log(userId);
-    const user = await User.findOne({username: currentUser.username}).exec();
+    const user = await User.findOne({username: currentUser.username})
+        .populate("choosedUser");
     const allSquealByUser = await Squeal.find({sender: user})
     console.log(allSquealByUser)
     if (user === null) {
@@ -58,7 +56,7 @@ exports.user_another = asyncHandler(async (req, res, next) => {
 })
 exports.user_regist_post = asyncHandler(async (req, res, next) => {
     const userInfo = req.body;
-
+    console.log(userInfo)
     const existingUser = await User.findOne({username: userInfo.username});
     if (existingUser) {
         console.log("utente esistente")
@@ -69,7 +67,7 @@ exports.user_regist_post = asyncHandler(async (req, res, next) => {
         nickname: userInfo.username,
         username: userInfo.username,
         password: userInfo.password,
-        accountType: userInfo.userType,
+        accountType: userInfo.accountType,
         creditInit: userInfo.creditInit,
         creditAvailable: {
             daily: userInfo.creditInit,
@@ -160,6 +158,7 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
             status: 200,
             message: "Logged successfully",
             token: token,
+            accountType: loguser.accountType
         })
     }
 
@@ -168,7 +167,7 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
 
 exports.user_changeCredit_patch = asyncHandler(async (req, res) => {
     const currentUser = req.user.username
-    const value = req.body.value
+    const value =  Number(req.body.value)
     console.log('currentUser', currentUser)
 
     console.log(value)
@@ -219,13 +218,13 @@ exports.avatar_get = asyncHandler(async (req, res, next) => {
 
 
 exports.SMM_list_get = asyncHandler(async (req, res) => {
-    const userid = req.query.user
+    const user1 = req.user
     let user;
     try {
-        user = await User.findOne({_id: userid})
+        user = await User.findOne({username: user1.username})
         if (user.accountType === 'vip') {
-            const smms = await User.find({accountType: "smm", choosedUser: {$ne: user}})
-            res.status(200).json({smms: smms})
+            const smms = await User.find({accountType: "smm"}).select('username')
+            res.status(200).json({smms})
         } else {
             res.status(500).json({messagge: 'non sei un utente VIP'})
 
@@ -239,17 +238,20 @@ exports.SMM_list_get = asyncHandler(async (req, res) => {
 exports.chooseSMM_request_post = asyncHandler(async (req, res) => {
     const userid = req.user
     //use smm's _id
-    const SMM = req.body.SMM
+    const SMM = req.body.receiver
 
     try {
-        const user = await User.findOne({_id: userid})
+        const user = await User.findOne({username: userid.username})
         if (user.accountType === 'vip') {
-            const smm = await User.findOne({_id: SMM})
-            const req_mana = new Request({
+            const smm = await User.findOne({username: SMM})
+            console.log(smm)
+            const req_mana = new SMMreq({
                 sender: user,
+                senderName: user.username,
                 receiver: smm
             })
             await req_mana.save()
+            res.status(200).json({message: "domanda mandata con successo"})
         }
     } catch (error) {
         console.log(error)

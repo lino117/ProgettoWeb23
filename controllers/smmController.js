@@ -1,55 +1,63 @@
 const User = require("../schemas/users");
 const Squeal = require("../schemas/squeal");
 const Channel = require('../schemas/channel')
+const SMMreq = require('../schemas/request')
 const asyncHandler = require("express-async-handler");
 const {log} = require("debug");
 
-exports.choosePart = asyncHandler(async (req,res)=>{
+exports.choosePart = asyncHandler(async (req, res) => {
     const whoBeChosen = req.body.beChosenPart
     const whoChoose = req.body.toChoosePart
 
-    const updatedChoosePart = await User.findByIdAndUpdate(whoChoose,{
-        choosedUser : whoBeChosen
-    },{
-        returnDocument:'after'
+    const updatedChoosePart = await User.findByIdAndUpdate(whoChoose, {
+        choosedUser: whoBeChosen
+    }, {
+        returnDocument: 'after'
     })
     res.status(200).send(updatedChoosePart)
 
 })
-exports.changePart=asyncHandler(async (req,res)=>{
+exports.changePart = asyncHandler(async (req, res) => {
     const whoReplace = req.body.toReplacePart
     const whoChange = req.body.toRemovePart
 
-    const updatedChoosePart = await User.findByIdAndUpdate(whoChange,{
-        choosedUser : whoReplace
-    },{
-        returnDocument:'after'
+    const updatedChoosePart = await User.findByIdAndUpdate(whoChange, {
+        choosedUser: whoReplace
+    }, {
+        returnDocument: 'after'
     })
     res.status(200).send(updatedChoosePart)
 })
 
-exports.getVIP = asyncHandler(async (req,res)=>{
-    const smm = req.user
-    const vip = req.body.vipUser
-    const user = await User.findOne({username: currentUser.username}).exec();
-    const vipUser = await User.findOne({ username: vip}).exec()
-    if (user === null) {
-        const error = new Error("User not found");
-        error.status = 404;
-        return
+exports.getVIP = asyncHandler(async (req, res) => {
+    try {
+        const smm = req.user
+        const vip = req.query.vip
+        const user = await User.findOne({username: smm.username}).exec();
+        const vipUser = await User.findOne({username: vip})
+        const vipUserSqueals = await Squeal.find({sender: vipUser})
+        const resData = {vipUser, vipUserSqueals}
+        if (vipUser === null) {
+            const error = new Error("User not found");
+            error.status = 404;
+
+        }
+        res.send(resData);
+    } catch (error) {
+        console.log(error)
     }
-    res.send(vipUser);
+
 
 })
 
-exports.monitoring = asyncHandler(async (req,res)=>{
+exports.monitoring = asyncHandler(async (req, res) => {
     const vipID = req.query.vipID
-    const squeals = await Squeal.find({ sender: vipID }).lean();
+    const squeals = await Squeal.find({sender: vipID}).lean();
     const resultSqueals = {
         reactionSortSqueals: squeals.slice().sort((a, b) => (b.reaction.like + b.reaction.dislike) - (a.reaction.like + a.reaction.dislike)),
-        popularSortSqueals : squeals.slice().sort((a, b) => b.popularity - a.popularity),
-        riskUnpopSqueals :[],
-        riskControvSqueals:[]
+        popularSortSqueals: squeals.slice().sort((a, b) => b.popularity - a.popularity),
+        riskUnpopSqueals: [],
+        riskControvSqueals: []
     }
     // viene controllato se campo popularity non esiste
     for (const squeal of squeals) {
@@ -82,7 +90,7 @@ exports.monitoring = asyncHandler(async (req,res)=>{
 exports.VIP_list_get = asyncHandler(async (req, res) => {
     const userlogged = req.user
     try {
-         const user = await User.findOne({ username: userlogged.username})
+        const user = await User.findOne({username: userlogged.username})
         console.log(user)
         if (user.accountType === 'smm') {
             const vips = await User.find({accountType: "vip", choosedUser: user})
@@ -100,10 +108,11 @@ exports.VIP_list_get = asyncHandler(async (req, res) => {
 exports.VIP_req_list = asyncHandler(async (req, res) => {
     const userlogged = req.user
     try {
-        const user = await User.findOne({ username: userlogged.username})
+        const user = await User.findOne({username: userlogged.username})
         console.log(user)
         if (user.accountType === 'smm') {
-            const req_list = await Request.find({receiver: user, isAccepted:{$ne: true}})
+            const req_list = await SMMreq.find({receiver: user, isAccepted: {$ne: true}})
+                .populate({path: "sender", select: "username"})
             res.status(200).json({requests: req_list})
         } else {
             res.status(500).json({messagge: 'non sei un utente SMM'})
@@ -115,19 +124,44 @@ exports.VIP_req_list = asyncHandler(async (req, res) => {
 })
 
 exports.acceptReq = asyncHandler(async (req, res) => {
-    const request = req.body.request
+    const requestID = req.body.request
     const user = req.user
-    const smm = User.findOne({username: user.username})
-    const reqBody = Request.findOne({sender: request.sender, receiver: smm})
 
-    if (request.accept === true){
-        const vip = User.findOne({_id: request.sender})
-        vip.choosedUser = smm;
-        reqBody.isAccepted = true;
-        await vip.save()
-        await reqBody.save()
+    const reqBody = await SMMreq.findOne({_id: requestID})
+    const senderID = reqBody.sender
+
+    const vip = await User.findOne({_id: senderID})
+
+    console.log(vip)
+    const smm = await User.findOne({username: user.username})
+    try {
+        if (vip.choosedUser && vip.choosedUser.equals(smm._id)) {
+            reqBody.isAccepted = true;
+            await reqBody.save()
+
+            res.status(200).json({response: 'hai già accettato'})
+        } else {
+            vip.choosedUser = smm;
+            reqBody.isAccepted = true;
+            await vip.save()
+            await reqBody.save()
+            res.status(200).json({response: 'hai accettato'})
+        }
+
+    } catch (error) {
+        console.log(error)
     }
+
 })
 
+exports.removeSMM = asyncHandler(async (req, res, next) => {
+    try {
+        const user = req.user
+        const curr_user = await User.updateOne({username: user.username},
+            {$unset: {choosedUser: ''}})
+        res.send(curr_user)
 
-
+    } catch (error) {
+        console.log(error)
+    }
+})

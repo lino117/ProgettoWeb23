@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
+const {ObjectId} = require("mongodb");
 // const Channel = require("./channel");
 const { Schema } = mongoose;
 
 const squealSchema = new Schema({
     sender: { type: Schema.Types.ObjectId, ref: "User"},
     username: { type: String},
-    body: { type: String, required: true},// Può essere testo, immagine, video o geolocazione
+    body: { type: Schema.Types.Mixed , required: true},// Può essere testo, immagine, video o geolocazione
     recipients: {
         // Elenco di destinatari (individui, canali o keyword)
         users:{ type: [Schema.Types.ObjectId], ref: "User"},
@@ -21,7 +22,7 @@ const squealSchema = new Schema({
         enum: ['popolare', 'impopolare', 'controverso'], // Categoria del messaggi
     },
     squealerChannels: {
-        type: [{type:Schema.Types.ObjectId, ref: "Channel"}], // Canali Squealer a cui è stato aggiunto dalla redazione
+        type: {type:Schema.Types.ObjectId, ref: "Channel"}, // Canali Squealer a cui è stato aggiunto dalla redazione
     },
     automaticMessage: { type: Boolean,  default: false},
     geo: {

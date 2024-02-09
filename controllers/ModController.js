@@ -10,7 +10,6 @@ arrayEqual=  (arrayA, arrayB)=>{
 }
 
 checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
-    var lastPageFlag = false
 
     const lastPage =  await schema.aggregate([
         {
@@ -24,10 +23,11 @@ checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
         },
     ])
     if (lastPage[0]){
-        if (lastPage[0].total < showNumber){
-            lastPageFlag=true
+        if (lastPage[0].total > showNumber){
+            return false
         }
     }
+    return true
 
     const sortObject = {};
     if (sortField === 'dateTime'){
