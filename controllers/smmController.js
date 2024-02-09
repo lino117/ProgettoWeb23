@@ -86,7 +86,10 @@ exports.monitoring = asyncHandler(async (req, res) => {
 
 
 })
-
+exports.getSMM = asyncHandler(async (req,res)=>{
+    const smmList = await User.find({accountType : 'smm'}).sort({'username':1}).exec()
+    res.status(200).send(smmList)
+})
 exports.VIP_list_get = asyncHandler(async (req, res) => {
     const userlogged = req.user
     try {

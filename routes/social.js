@@ -91,6 +91,11 @@ router.get('/get_vipList', authenticateToken, smm_controller.VIP_list_get)
 
 router.post('/change_smm', smm_controller.changePart)
 router.post('/acceptReq', authenticateToken, upload.none(), smm_controller.acceptReq)
+router.post('/choose_smm',smm_controller.choosePart)
+router.post('/change_smm',smm_controller.changePart)
+router.post('/acceptReq',smm_controller.acceptReq)
+
+router.get('/get_smm_list',smm_controller.getSMM)
 
 
 router.get('/deleteMany', del.deletMany)

@@ -10,6 +10,7 @@ const squealSchema = new Schema({
     recipients: {
         // Elenco di destinatari (individui, canali o keyword)
         users:{ type: [Schema.Types.ObjectId], ref: "User"},
+        channels:{ type: [Schema.Types.ObjectId], ref: "Channel"},
         keywords: { type: [String]}
     },
     dateTime: {

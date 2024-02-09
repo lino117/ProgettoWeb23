@@ -8,8 +8,8 @@ const asyncHandler = require("express-async-handler");
 arrayEqual=  (arrayA, arrayB)=>{
     return JSON.stringify(arrayA)  !==  JSON.stringify(arrayB)
 }
-
 checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
+    var lastPageFlag = false
 
     const lastPage =  await schema.aggregate([
         {
@@ -23,12 +23,13 @@ checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
         },
     ])
     if (lastPage[0]){
-        if (lastPage[0].total > showNumber){
-            return false
+        if (lastPage[0].total < showNumber){
+            return true
         }
     }
-    return true
-
+    return false
+}
+getResults =async (schema,filter,skipNum,showNumber, sortField)=>{
     const sortObject = {};
     if (sortField === 'dateTime'){
         sortObject[sortField] = -1;
@@ -36,24 +37,22 @@ checkLastPage = async (schema,filter,skipNum,showNumber, sortField)=>{
         sortObject[sortField] = 1;
     }
 
-    const data = await schema.aggregate([
+    return await schema.aggregate([
 
         {
             $match: Object.keys(filter).length > 0 ? filter : {}
 
         },
         {
-            $sort : sortObject
+            $sort: sortObject
         },
         {
-            $skip : parseInt(skipNum)
+            $skip: parseInt(skipNum)
         },
         {
-            $limit : parseInt(showNumber)
+            $limit: parseInt(showNumber)
         }
     ])
-
-    return {data : data, lastPageFlag : lastPageFlag}
 }
 
 //get the list of all users
@@ -105,10 +104,102 @@ exports.user_list = asyncHandler(async (req, res, next) => {
     if (userFilter.filtType){
         filter.accountType=userFilter.filtType
     }
-    const docResults =  await checkLastPage(User,filter,skipNum,userFilter.showNumber,'username')
-
-    res.send( {users:docResults.data, IsLastPage:docResults.lastPageFlag} )
+    const lastPageFlag =  await checkLastPage(User,filter,skipNum,userFilter.showNumber)
+    const data = await getResults(User,filter,skipNum,userFilter.showNumber,'username')
+    res.send( {users:data, IsLastPage:lastPageFlag} )
 })
+exports.squeal_all_get = asyncHandler(async (req, res, next) => {
+    const squealFilter = req.query.squealFilter
+    const skipNum = squealFilter.pageNum > 0 ? (squealFilter.pageNum - 1) * squealFilter.showNumber : 0
+    var authorsArray = []
+    var recipArray= []
+    const filter={}
+    if (squealFilter.autor) {
+        regexAutor = new RegExp(squealFilter.autor, 'gi')
+        autors = await User.find({username: regexAutor}, {_id: 1}).lean()
+        for (const autor of autors) {
+            authorsArray.push(autor._id)
+        }
+        filter.sender =  { $in: authorsArray }
+    }
+
+
+    if(squealFilter.recipient){
+        recipArray.push(new RegExp(squealFilter.recipient,'gi'))
+        filter.recipient=  { $in: recipArray }
+
+    }
+
+    var endTime = squealFilter.endTime ? new Date(squealFilter.endTime) : new Date()
+    endTime.setHours(24)
+    endTime.setMinutes(59)
+    endTime.setSeconds(59)
+    var startTime = squealFilter.startTime ? new Date(squealFilter.startTime) : new Date('2024-01-01')
+
+    filter.dateTime = {
+        $lte: endTime,
+        $gte: startTime
+    }
+
+    const lastPageFlag =  await checkLastPage(Squeal,filter,skipNum,squealFilter.showNumber)
+    const data = await getResults(Squeal,filter,skipNum,squealFilter.showNumber,'dateTime')
+
+    await User.populate(data,{path:'sender'})
+    await User.populate(data,{path:'recipients.users'})
+    await User.populate(data,{path:'recipients.channels'})
+
+    console.log(data)
+    res.status(200).send( {squeals:data, IsLastPage:lastPageFlag} )
+
+})
+exports.channelOffi_all_get = asyncHandler(async (req, res, next) => {
+    const offFilter = req.query.offFilter
+    const filter ={
+        typeOf :'official'
+    }
+    const skipNum = offFilter.pageNum > 0 ? (offFilter.pageNum - 1) * offFilter.showNumber : 0
+
+    const lastPageFlag =  await checkLastPage(Channel,filter,skipNum,offFilter.showNumber)
+    const data = await getResults(Channel,filter,skipNum,offFilter.showNumber,'name')
+    await User.populate(data,{path:'admin'})
+
+    res.status(200).send( {data:data, IsLastPage:lastPageFlag} )
+
+
+})
+exports.channelPriv_all_get = asyncHandler(async (req, res, next) => {
+    const privateFilter = req.query.privateFilter
+    const filter ={
+        typeOf :'private'
+    }
+    const skipNum = privateFilter.pageNum > 0 ? (privateFilter.pageNum - 1) * privateFilter.showNumber : 0
+
+    const lastPageFlag =  await checkLastPage(Channel,filter,skipNum,privateFilter.showNumber)
+    const data = await getResults(Channel,filter,skipNum,privateFilter.showNumber,'name')
+    await User.populate(data,{path:'admin'})
+
+    res.status(200).send( {data:data, IsLastPage:lastPageFlag} )
+
+})
+
+
+exports.channelSqueal_get = asyncHandler(async (req,res)=>{
+    const channelName = req.query.channelName
+    const channel= await Channel.findOne({name:channelName}).exec()
+    const channelSqueal = await Squeal.find({squealerChannels :channel._id} )
+        .sort({dateTime:1}).populate('sender').exec()
+    res.send(channelSqueal)
+})
+exports.noChannelSqueal_get = asyncHandler(async (req,res)=>{
+    const squeals = await Squeal.find({
+        squealerChannels:null
+    }).populate('sender').exec()
+    console.log(squeals)
+    res.status(200).send(squeals)
+})
+
+
+
 exports.user_update_patch = asyncHandler(async (req, res)=>{
     const newDate = req.body;
     var newCredit = {
@@ -145,56 +236,6 @@ exports.user_update_patch = asyncHandler(async (req, res)=>{
 
     res.send(newUser)
     // res.status(200).send(body)
-})
-exports.channelSqueal_get = asyncHandler(async (req,res)=>{
-    const channelName = req.query.channelName
-    const channel= await Channel.findOne({name:channelName}).exec()
-    // mongoose.populate 用于 得到那个obj id的信息， 比如正常的话是显示 obj，id， 如果有populate那个field， 那就会显示那个obj，id的所有信息
-    const channelSqueal = await Squeal.find({squealerChannels :channel._id} ).sort({dateTime:1}).limit(3).exec()
-
-    res.send(channelSqueal)
-})
-exports.squeal_all_get = asyncHandler(async (req, res, next) => {
-    const squealFilter = req.query.squealFilter
-    const skipNum = squealFilter.pageNum > 0 ? (squealFilter.pageNum - 1) * squealFilter.showNumber : 0
-    var authorsArray = []
-    var recipArray= []
-    const filter={}
-    if (squealFilter.autor) {
-        regexAutor = new RegExp(squealFilter.autor, 'gi')
-        autors = await User.find({username: regexAutor}, {_id: 1}).lean()
-        for (const autor of autors) {
-            authorsArray.push(autor._id)
-        }
-        filter.sender =  { $in: authorsArray }
-    }
-
-
-    if(squealFilter.recipient){
-        recipArray.push(new RegExp(squealFilter.recipient,'gi'))
-        filter.recipient=  { $in: recipArray }
-
-    }
-
-    var endTime = squealFilter.endTime ? new Date(squealFilter.endTime) : new Date()
-        endTime.setHours(24)
-        endTime.setMinutes(59)
-        endTime.setSeconds(59)
-    var startTime = squealFilter.startTime ? new Date(squealFilter.startTime) : new Date('2024-01-01')
-
-    filter.dateTime = {
-        $lte: endTime,
-        $gte: startTime
-    }
-
-    const resData = await checkLastPage(Squeal,filter,skipNum,squealFilter.showNumber,'dateTime')
-
-
-
-    await User.populate(resData.data,{path:'sender'})
-    res.send({ squeals:resData.data,
-              IsLastPage: resData.lastPageFlag
-    })
 })
 exports.squeal_update_patch = asyncHandler( async (req, res)=>{
     const newDate = req.body;
@@ -258,17 +299,22 @@ exports.squeal_update_patch = asyncHandler( async (req, res)=>{
 })
 exports.addSquealChannel = asyncHandler(async (req,res)=> {
     channelName = req.body.channelName
-    squealID = req.body.squealID
+    squealIDs = req.body.squealIDs
+    console.log(req.body)
     const channel = await Channel.findOne({name: channelName}).exec()
+    console.log(channel)
     channelID= channel._id
-    const squeal = await Squeal.findByIdAndUpdate(squealID, {
-            squealerChannels: channelID
-        }, {
-            returnDocument: 'after'
-        }
-    )
-
-    res.send(squeal)
+    var data = []
+    for (const squealID of squealIDs) {
+        const squeal = await Squeal.findByIdAndUpdate(squealIDs, {
+                squealerChannels: channelID
+            }, {
+                returnDocument: 'after'
+            }
+        )
+        data.push(squeal)
+    }
+    res.status(200).send('Gli squeals selezionati son stati aggiunti con successo')
 })
 exports.delSquealChannel = asyncHandler(async (req,res)=>{
     squealID = req.body.squealID
@@ -279,34 +325,6 @@ exports.delSquealChannel = asyncHandler(async (req,res)=>{
     })
 
     res.send(squeal)
-})
-exports.channelOffi_all_get = asyncHandler(async (req, res, next) => {
-    const offFilter = req.query.offFilter
-    const filter ={
-        typeOf :'official'
-    }
-    console.log(offFilter)
-    const skipNum = offFilter.pageNum > 0 ? (offFilter.pageNum - 1) * offFilter.showNumber : 0
-    console.log(skipNum,'prima di function')
-
-    const docResults = await checkLastPage(Channel,filter,skipNum,offFilter.showNumber,'name')
-    await User.populate(docResults.data,{path:'admin'})
-
-    res.send( {data:docResults.data, IsLastPage:docResults.lastPageFlag} )
-
-})
-exports.channelPriv_all_get = asyncHandler(async (req, res, next) => {
-    const privateFilter = req.query.privateFilter
-    const filter ={
-        typeOf :'private'
-    }
-    console.log(privateFilter)
-    const skipNum = privateFilter.pageNum > 0 ? (privateFilter.pageNum - 1) * privateFilter.showNumber : 0
-
-    const docResults =await checkLastPage(Channel,filter,skipNum,privateFilter.showNumber,'name')
-    await User.populate(docResults.data,{path:'admin'})
-    res.send( {data:docResults.data, IsLastPage:docResults.lastPageFlag} )
-
 })
 exports.channelOffi_delete_put =asyncHandler (async (req,res)=>{
     const channelIDs = req.body
