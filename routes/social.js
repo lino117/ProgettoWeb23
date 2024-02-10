@@ -41,7 +41,7 @@ router.put("/changePassword", authenticateToken, user_changePwd_put);
 // GET listing
 router.get('/allSqueals', mod_controller.squeal_all_get);
 router.get('/singleSqueal', squeal_controller.single_squeal_get);
-router.get('/get_all_squeals', squeal_controller.get_squeals);
+router.get('/get_all_squeals', authenticateToken, squeal_controller.get_squeals);
 router.get('/get_image', squeal_controller.image_get);
 router.get('/get_views', squeal_controller.views_get)
 router.get('/channelSqueal_get', mod_controller.channelSqueal_get)
@@ -102,7 +102,11 @@ router.get('/deleteMany', del.deletMany)
 router.get('/updateMany', del.updateMany)
 
 //rinnovo credito
-schedule.scheduleJob('0 0 * * *', function () {
+schedule.scheduleJob('0 0 * * *', async function () {
+    await chan_controller.channel_CatPicApi()
+    await chan_controller.channel_NasaPicApi()
+    await chan_controller.channel_NEWSAPI()
+    await chan_controller.deleteOldNews()
     renewCredit('daily')
 });
 schedule.scheduleJob('0 0 * * 1', function () {

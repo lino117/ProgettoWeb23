@@ -6,9 +6,8 @@ const View = require('../schemas/views');
 const mongoose = require('mongoose')
 
 const fs = require('fs');
-const io = require("../controllers/socketController")
 const jwt = require('jsonwebtoken');
-const {secretToken, getCurrentUserFromToken} = require("../middleware/authenticateToken");
+const {secretToken, getCurrentUserFromToken, authenticateToken} = require("../middleware/authenticateToken");
 const asyncHandler = require("express-async-handler");
 
 const {upload} = require('../middleware/fileHandler');
@@ -38,7 +37,9 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
 
     let destUsers = [];
     let destKeywords = []
-    if (req.body.sender){ currentUser = req.body.sender}
+    if (req.body.sender) {
+        currentUser = req.body.sender
+    }
     if (destArray) {
         if (destArray.length === 1 && destArray[0].match(mention)) {
             let singleUser = destArray[0].match(mention)
@@ -69,18 +70,20 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
 
     let creditUsage = 0
     creditUsage += squealData.length
-    if (image){creditUsage += 1000}
+    if (image) {
+        creditUsage += 1000
+    }
 
     const [sender, channelInDB] = await Promise.all([
         User.findOne({username: currentUser}),
         Channel.findOne({name: channel}),
     ]);//
-    if(channelInDB){
+    if (channelInDB) {
         const totalSqueals = await Squeal.countDocuments({'squealerChannels': channelInDB._id})
         console.log(totalSqueals)
         const chan = await Channel.findOneAndUpdate({_id: channelInDB._id},
-            { $set: { SquealNum: totalSqueals}},
-            { new: true}
+            {$set: {SquealNum: totalSqueals}},
+            {new: true}
         )
     }
     const squeal = new Squeal({
@@ -120,27 +123,88 @@ exports.new_squeal = asyncHandler(async (req, res, next) => {
 
 exports.get_squeals = asyncHandler(async (req, res, next) => {
 
-    const token = req.header('Authorization');
+    const isLogged = req.isAuthenticated
 
     const limit = parseInt(req.query.limit) || 100;
-    let skip = parseInt(req.query.skip) || 0;
+    let skip = Number(req.query.skip) ;
+    console.log('skip:' , skip)
+    if (isLogged) {
+        const totalSqueals = await Squeal.countDocuments();
+        if (skip >= totalSqueals) {
+            skip = Math.max(0, totalSqueals - limit);
+        }
 
-    // 计算总的 Squeal 数量，如果是未登录用户，仅计算 typeOf 为 'official' 的数量
-    const queryCondition = token ? {} : {'squealerChannels.typeOf': 'official'};
-    const totalSqueals = await Squeal.countDocuments(queryCondition);
+        const squealsToShow = await Squeal.find()
+            .populate('squealerChannels')
+            .populate('replies')
+            .sort({dateTime: -1})
+            .limit(limit)
+            .skip(skip);
 
-    if (skip >= totalSqueals) {
-        skip = Math.max(0, totalSqueals - limit);
+        return res.send(squealsToShow);
+
+    } else {
+        const totalCount  = await Squeal.aggregate([
+            {
+                $lookup: {
+                    from: "channels",
+                    localField: "squealerChannels",
+                    foreignField: "_id",
+                    as: "squealerChannelInfo"
+                }
+            },
+            {
+                $unwind: "$squealerChannelInfo"
+            },
+            {
+                $match: {
+                    "squealerChannelInfo.typeOf": "official"
+                }
+            },
+            {
+                $count: "total"
+            }
+        ]);
+        const totalDocuments = totalCount[0] ? totalCount[0].total : 0;
+        let actualSkip = skip;
+        console.log(totalDocuments)
+        if (skip + limit > totalDocuments) {
+            actualSkip = Math.max(0, totalDocuments - limit);
+        }
+        const squealsToShow = await Squeal.aggregate([
+            {
+                $lookup: {
+                    from: "channels", // 确保这是MongoDB中的实际集合名称，通常是模型名称的小写复数形式
+                    localField: "squealerChannels", // 直接使用引用字段
+                    foreignField: "_id",
+                    as: "squealerChannelInfo"
+                }
+            },
+            {
+                $unwind: "$squealerChannelInfo"
+            },
+            {
+                $match: {
+                    "squealerChannelInfo.typeOf": "official"
+                }
+            },
+            {
+                $sort: { dateTime: -1 }
+            },
+            {
+                $skip: skip
+            },
+            {
+
+                $limit: limit
+            }
+        ]);
+
+        return res.send(squealsToShow);
+
     }
 
-    // 根据用户是否登录来调整查询条件
-    const squealsToShow = await Squeal.find(queryCondition)
-        .populate('squealerChannels')
-        .sort({ dateTime: -1 })
-        .limit(limit)
-        .skip(skip);
 
-    res.send(squealsToShow);
 });
 
 
@@ -196,7 +260,7 @@ exports.reply_get = asyncHandler(async (req, res, next) => {
     const reply = await Reply.find({squeal: info.id})
     for (i = 0; i < reply.length; i++) {
         console.log(reply[i].user)
-        userRes[i] = await User.find({_id: reply[i].user}).select('_id image', )
+        userRes[i] = await User.find({_id: reply[i].user}).select('_id image',)
         console.log(userRes[i])
     }
     // userRes[0] = await User.findOne({_id: reply[3].user})
@@ -223,14 +287,13 @@ exports.search_get = asyncHandler(async (req, res, next) => {
                 {'recipients.keywords': new RegExp(word, 'i')})
 
         } else {
-            squealsMatch =  await Squeal.find({body: new RegExp(word, 'i')})
+            squealsMatch = await Squeal.find({body: new RegExp(word, 'i')})
 
         }
         res.status(200).json({squealsMatch})
-    }catch (error) {
+    } catch (error) {
         console.log(error)
     }
-
 
 
 })
@@ -307,14 +370,14 @@ exports.views_get = asyncHandler(async (req, res, next) => {
 //da rinnovare ogni giorno, ogni primo giorno della settimana, ogni primo giorno del mese
 exports.renewCredit = asyncHandler(async (frequeanza) => {
     try {
-        if (frequeanza === 'daily'){
+        if (frequeanza === 'daily') {
             const users = await User.updateMany({},
                 {creditAvailable: {daily: 1000}})
 
-        } else if ( frequeanza === 'weekly'){
+        } else if (frequeanza === 'weekly') {
             const users = await User.updateMany({},
                 {creditAvailable: {weekly: 6000}})
-        } else if ( frequeanza === 'monthly'){
+        } else if (frequeanza === 'monthly') {
             const users = await User.updateMany({},
                 {creditAvailable: {monthly: 6000}})
         } else {
@@ -326,15 +389,15 @@ exports.renewCredit = asyncHandler(async (frequeanza) => {
     }
 })
 
-exports.getGeoSqueals = asyncHandler(async (req, res, next) =>{
+exports.getGeoSqueals = asyncHandler(async (req, res, next) => {
     try {
         const username = req.user.username
         const user = await User.findOne({username: username})
         const geoSqueals = await Squeal
-            .find({sender: user, 'geo.coordinates': { $exists: true, $ne: [] }})
-            .sort({ dateTime: 1})
+            .find({sender: user, 'geo.coordinates': {$exists: true, $ne: []}})
+            .sort({dateTime: 1})
         res.status(200).json(geoSqueals)
-    }catch (error){
+    } catch (error) {
         console.log(error)
     }
 

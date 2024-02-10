@@ -9,13 +9,12 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const bodyParser = require("body-parser");
 var socialRouter = require('./routes/social');
-const socketController = require('./controllers/socketController')
 var app = express();
 const server = http.createServer(app);
 const mongoose = require("mongoose");
 const {secretToken} = require("./middleware/authenticateToken");
-// mongoose.connect("mongodb+srv://jinclaudio:Keqingyyds123.@claudiomongo.3ulb5gw.mongodb.net/ProgettoTecweb?retryWrites=true&w=majority");
-mongoose.connect('mongodb://site222320:aiRaeWe2@mongo_site222320?writeConcern=majority');
+mongoose.connect("mongodb+srv://jinclaudio:Keqingyyds123.@claudiomongo.3ulb5gw.mongodb.net/ProgettoTecweb?retryWrites=true&w=majority");
+// mongoose.connect('mongodb://site222320:aiRaeWe2@mongo_site222320?writeConcern=majority');
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
@@ -33,21 +32,23 @@ app.use(cors());
 
 app.use('/social', socialRouter);
 
-// app.use("/", express.static("public"));
-
-app.use('/moderator/', express.static(path.join(__dirname, 'frontend/mod')));
-app.use('/moderator',(req, res) => {
-    res.sendFile(path.join(__dirname, "frontend/mod/index.html"))
-});
-
-
-// app.use('/smm', express.static('frontend/smm/build'))
-// app.use("/smm/*", (req, res) => { res.sendFile(path.join(__dirname, "frontend/smm/build/index.html")) });
-app.use('/', express.static(path.join(__dirname, 'frontend/app/dist')));
-
-app.use((req, res) => {
-    res.sendFile(path.join(__dirname, "frontend/app/dist/index.html"))
-});
+// app.use("/", express.static(path.join(__dirname, 'public')));
+//
+// app.use('/moderator/', express.static(path.join(__dirname, 'frontend/mod')));
+// app.use('/moderator',(req, res) => {
+//     res.sendFile(path.join(__dirname, "frontend/mod/index.html"))
+// });
+//
+//
+// app.use('/smm/', express.static(path.join(__dirname, 'frontend/smm/dist')))
+// app.use("/smm", (req, res) => {
+//     res.sendFile(path.join(__dirname, "frontend/smm/dist/index.html")) });
+//
+// app.use('/', express.static(path.join(__dirname, 'frontend/app/dist')));
+//
+// app.use((req, res) => {
+//     res.sendFile(path.join(__dirname, "frontend/app/dist/index.html"))
+// });
 
 
 // catch 404 and forward to error handler
@@ -69,6 +70,8 @@ app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.render('error');
 });
-
+server.listen(8000);
+// server.on('error', onError);
+// server.on('listening', onListening);
 
 module.exports = app;

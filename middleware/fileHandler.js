@@ -1,12 +1,14 @@
 const multer = require('multer');
+const {join} = require("path");
+const path = require("path");
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         let uploadPath = ''
         if (req.path === '/post_avatar'){
-            uploadPath = 'public/avatars'
+            uploadPath = join(path.resolve(__dirname, '..'), 'public/avatars')
         } else {
-            uploadPath = 'public/images'
+            uploadPath = join(path.resolve(__dirname, '..'), 'public/images')
         }
         cb(null, uploadPath); // 设置存储目录
     },

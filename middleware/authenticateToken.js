@@ -3,17 +3,20 @@ const secretToken = "tecweb2223";
 function authenticateToken(req, res, next) {
     const token = req.header('Authorization');
     if (!token) {
-        return res.status(401).json({ error: 'No token provided' });
-    }
-
-    jwt.verify(token.replace('Bearer ', ''), secretToken, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'Invalid token' });
-        }
-        console.log("AuthenticateToken:", user)
-        req.user = user;
+        req.isAuthenticated = false;
         next();
-    });
+    } else {
+
+        jwt.verify(token.replace('Bearer ', ''), secretToken, (err, user) => {
+            if (err) {
+                return res.status(403).json({ error: 'Invalid token' });
+            }
+            console.log("AuthenticateToken:", user)
+            req.isAuthenticated = true;
+            req.user = user;
+            next();
+        });
+    }
 }
 
 function getCurrentUserFromToken(token) {

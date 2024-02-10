@@ -190,6 +190,7 @@ exports.channel_NEWSAPI = async () => {
                 squealerChannels: newChannel,
                 automaticMessage: true,
             })
+            await exports.channel_counSqueals('§NEWS')
             await squeal.save()
         }
     })
@@ -218,18 +219,19 @@ exports.channel_NasaPicApi = async () => {
                 automaticMessage: true,
             })
             await squeal.save()
+            await exports.channel_counSqueals('§NASA')
 
         } else {
             console.error(`NASA API failed: ${response.status}`);
         }
     } catch (error) {
-        console.error('发生错误：', error);
+        console.error('Error：', error);
     }
 }
 
 exports.channel_CatPicApi = async () => {
     try {
-        const mod = await User.findOne({username: 'SquealUfficiale'});
+        const mod = await User.findOne({username: 'squealerofficial'});
         const newChannel = await Channel.findOne({name: '§CAT'});
 
         const apiUrl = `https://api.thecatapi.com/v1/images/search?api_key=${catapi}`;
@@ -250,6 +252,7 @@ exports.channel_CatPicApi = async () => {
                 automaticMessage: true,
             })
             await squeal.save()
+            await exports.channel_counSqueals('§CAT')
 
         } else {
             console.error(`NASA API failed: ${response.status}`);
@@ -262,7 +265,7 @@ exports.channel_CatPicApi = async () => {
 
 exports.deleteOldNews = async () => {
     const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 7);
     const chan = await Channel.findOne({name: '§NEWS'})
     Squeal.deleteMany({squealerChannels: chan}, (err, result) => {
         if (err) {
@@ -274,9 +277,9 @@ exports.deleteOldNews = async () => {
 }
 // exports.channel_counSqueals('§NEWS')
 // exports.channel_NEWSAPI()
-setInterval(() => {
-    exports.channel_CatPicApi()
-    exports.channel_NasaPicApi()
-    exports.channel_NEWSAPI()
-
-}, 36000000);
+setInterval(async () => {
+    await exports.channel_CatPicApi()
+    await exports.channel_NasaPicApi()
+    await exports.channel_NEWSAPI()
+    await exports.deleteOldNews()
+}, 3600000);
